@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "TapoP100",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,23 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Tapo Smart Platform"
+      },
+      "username": {
+        "title": "Username",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "password": {
+        "title": "password",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "devices": {
+        "title": "Devices",
+        "type": "array"
       }
     }
   }

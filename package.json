@@ -1,16 +1,15 @@
 {
-  "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
+  "displayName": "Tapo P100 Plugin",
+  "name": "homebridge-tapo-p100",
   "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "description": "Homebridge Plugin for TP-Link Tapo P100 Plugs",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "https://github.com/apatsufas/homebridge-tapo-p100"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/apatsufas/homebridge-tapo-p100/issues"
   },
   "engines": {
     "node": ">=10.17.0",
@@ -24,15 +23,20 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "tapo",
+    "p100"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^0.21.1",
+    "lodash.defaults": "^4.2.0"
+  },
   "devDependencies": {
     "@types/node": "^14.14.22",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
     "eslint": "^7.18.0",
-    "homebridge": "^1.2.5",
+    "homebridge": "^1.1.7",
     "nodemon": "^2.0.7",
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",

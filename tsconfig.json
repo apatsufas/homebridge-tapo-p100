@@ -19,7 +19,7 @@
   },
   "include": [
     "src/"
-  ],
+, "app.js"  ],
   "exclude": [
     "**/*.spec.ts"
   ]
