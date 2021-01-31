@@ -17,7 +17,7 @@ Tested with:
 ## Installation
 
 1. Install homebridge
-2. Install this plugin using: `npm install -g homebridge-tapo-p100` or through Homebridge UI
+2. Install this plugin using: `npm install -g homebridge-tapo` or through Homebridge UI
 3. Update your Homebridge configuration file (`config.json`)
 
 ## Configuration
