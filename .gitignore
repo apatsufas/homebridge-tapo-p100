@@ -119,3 +119,5 @@ dist
 .yarn/build-state.yml
 .pnp.*
 .github/.DS_Store
+.DS_Store
+.vscode
