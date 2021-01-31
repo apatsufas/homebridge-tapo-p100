@@ -8,24 +8,50 @@
       "name": {
         "title": "Name",
         "type": "string",
+        "description": "Plugin name as displaued in the Homrbridge log",
         "required": true,
         "default": "Tapo Smart Platform"
       },
       "username": {
         "title": "Username",
         "type": "string",
+        "description": "The username you used to register/login to the Tapo app",
         "required": true,
         "default": ""
       },
       "password": {
-        "title": "password",
+        "title": "Password",
         "type": "string",
         "required": true,
+        "description": "The password you used to register/login to the Tapo app.",
         "default": ""
       },
       "devices": {
         "title": "Devices",
-        "type": "array"
+        "type": "array", 
+        "description": "The ip adrresses and the names for your P100 Plugs",
+        "items":{
+          "title": "Device",
+          "type": "object", 
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "required": true,
+              "examples": [
+                "Standing Lamp"
+            ]
+            },
+            "host": {
+              "title": "IP",
+              "type": "string",
+              "required": true,
+              "examples": [
+                "192.168.1.3"
+            ]
+            }
+          }
+        }
       }
     }
   }
