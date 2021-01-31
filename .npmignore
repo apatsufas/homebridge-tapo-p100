@@ -136,3 +136,4 @@ dist
 .github/.DS_Store
 .DS_Store
 .vscode
+src/.DS_Store
