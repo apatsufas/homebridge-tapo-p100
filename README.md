@@ -92,6 +92,13 @@ Example response from this endpoint:
 "time_diff":120,
 "lang":"en_US"}}
 ```
-Thanks
+## Information
+This plugin will also allow you to control the Tapo P100 Plugs even if you have blocked the internet connectivity of the device.
 
-Ported Python library https://github.com/fishbigger/TapoP100 to Nodejs
+I created the plugin for personal use and wanted to share it with other people too.
+
+It should be trivial to add support for L510E Bulbs, but I have none to test it with. Should also work with the P105 plugs (haven't tested it though).
+
+### Thanks / Credits
+
+Ported from the Python library https://github.com/fishbigger/TapoP100 (by @fishbigger) to Nodejs.
