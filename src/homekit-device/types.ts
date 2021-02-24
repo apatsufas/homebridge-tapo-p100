@@ -13,3 +13,7 @@ export type PlugSysinfo = CommonSysinfo &{
     fw_id: string;
     device_on: boolean;
   };
+
+export type LightSysinfo = PlugSysinfo &{ 
+    brightness: number;
+  };
