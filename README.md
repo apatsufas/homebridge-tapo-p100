@@ -13,6 +13,7 @@ This is a Homebridge platform plugin for the TP-Link Tapo P100 Plugs and L510E L
 Tested with:
 
 - Tapo P100 (EU)
+- Tapo L510E
 
 ## Installation
 
@@ -95,11 +96,11 @@ Example response from this endpoint:
 "lang":"en_US"}}
 ```
 ## Information
-This plugin will also allow you to control the Tapo P100 Plugs even if you have blocked the internet connectivity of the device.
+This plugin will also allow you to control the Tapo P100 Plugs and L510E Lightbulbs even if you have blocked the internet connectivity of the device.
 
 I created the plugin for personal use and wanted to share it with other people too.
 
-It should be trivial to add support for L530 Bulbs, but I have none to test it with. Should also work with the P105 plugs (haven't tested it though).
+It should be trivial to add support for L530 Bulbs (beta is available if you want to test it and provide feedback), but I have none to test it with. Should also work with the P105 plugs (haven't tested it though).
 
 ### Thanks / Credits
 
