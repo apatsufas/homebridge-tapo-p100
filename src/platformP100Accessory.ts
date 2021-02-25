@@ -26,7 +26,7 @@ export class P100Accessory {
           // set accessory information
           this.accessory.getService(this.platform.Service.AccessoryInformation)!
             .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
-            .setCharacteristic(this.platform.Characteristic.Model, 'Tapo')
+            .setCharacteristic(this.platform.Characteristic.Model, 'Tapo P100')
             .setCharacteristic(this.platform.Characteristic.SerialNumber, sysInfo.hw_id);
 
           // each service must implement at-minimum the "required characteristics" for the given service type

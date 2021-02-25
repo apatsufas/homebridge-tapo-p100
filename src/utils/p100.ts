@@ -5,20 +5,20 @@ import TpLinkCipher from './tpLinkCipher';
 export default class P100 {
 
     private crypto = require('crypto');
-    private axios = require('axios');
+    protected axios = require('axios');
 
     private encodedPassword!:string;
     private encodedEmail!:string;
     private privateKey!:string;
     private publicKey!:string;
-    private ip:string;
-    private cookie!:string;
-    private token!:string;
-    private sysInfo!:PlugSysinfo;
+    protected ip:string;
+    protected cookie!:string;
+    protected token!:string;
+    private _plugSysInfo!:PlugSysinfo;
 
-    private tpLinkCipher!:TpLinkCipher;
+    protected tpLinkCipher!:TpLinkCipher;
 
-    private ERROR_CODES = {
+    protected ERROR_CODES = {
       '0': 'Success',
       '-1010': 'Invalid Public Key Length',
       '-1501': 'Invalid Request or Credentials',
@@ -91,7 +91,7 @@ export default class P100 {
           if(res.data.error_code){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('99 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
 
@@ -103,7 +103,7 @@ export default class P100 {
           } catch (error){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('106 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
         })
@@ -146,7 +146,7 @@ export default class P100 {
           if(res.data.error_code){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('149 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
           const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
@@ -155,7 +155,7 @@ export default class P100 {
             if(response.error_code !== 0){
               const errorCode = response.error_code;
               const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+              this.log.error('158 Error Code: ' + errorCode + ', ' + errorMessage);
               return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
             }
             this.token = response.result.token;
@@ -163,7 +163,7 @@ export default class P100 {
           } catch (error){
             const errorCode = JSON.parse(decryptedResponse).error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('166 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
         })
@@ -222,7 +222,7 @@ export default class P100 {
           if(res.data.error_code){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('225 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
               
@@ -232,14 +232,14 @@ export default class P100 {
             if(response.error_code !== 0){
               const errorCode = response.error_code;
               const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+              this.log.error('235 Error Code: ' + errorCode + ', ' + errorMessage);
               return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
             }
             return true;
           } catch (error){
             const errorCode = JSON.parse(decryptedResponse).error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('242 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
         })
@@ -281,7 +281,7 @@ export default class P100 {
           if(res.data.error_code){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('284 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
                 
@@ -291,14 +291,14 @@ export default class P100 {
             if(response.error_code !== 0){
               const errorCode = response.error_code;
               const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+              this.log.error('294 Error Code: ' + errorCode + ', ' + errorMessage);
               return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
             }
             return true;
           } catch (error){
             const errorCode = JSON.parse(decryptedResponse).error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('301 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
         })
@@ -345,7 +345,7 @@ export default class P100 {
           if(res.data.error_code){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('348 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
                   
@@ -355,15 +355,15 @@ export default class P100 {
             if(response.error_code !== 0){
               const errorCode = response.error_code;
               const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+              this.log.error('358 Error Code: ' + errorCode + ', ' + errorMessage);
               return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
             }
-            this.sysInfo = response.result;
-            return response.result;
+            this.setSysInfo(response.result);
+            return this.getSysInfo();
           } catch (error){
             const errorCode = JSON.parse(decryptedResponse).error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('366 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
         })
@@ -377,8 +377,8 @@ export default class P100 {
    * Cached value of `sysinfo.device_id`  if set.
    */
     get id(): string {
-      if(this.sysInfo){
-        return this.sysInfo.device_id;
+      if(this.getSysInfo()){
+        return this.getSysInfo().device_id;
       }
       return '';
     }
@@ -387,37 +387,45 @@ export default class P100 {
    * Cached value of `sysinfo.device_id`  if set.
    */
     get name(): string {
-      if(this.sysInfo){
-        return Buffer.from(this.sysInfo.nickname, 'base64').toString('utf8');
+      if(this.getSysInfo()){
+        return Buffer.from(this.getSysInfo().nickname, 'base64').toString('utf8');
       }
       return '';
     }
 
     get model(): string {
-      if(this.sysInfo){
-        return this.sysInfo.model;
+      if(this.getSysInfo()){
+        return this.getSysInfo().model;
       }
       return '';
     }
   
     get serialNumber(): string {
-      if(this.sysInfo){
-        this.sysInfo.hw_id;
+      if(this.getSysInfo()){
+        this.getSysInfo().hw_id;
       }
       return '';
     }
   
     get firmwareRevision(): string {
-      if(this.sysInfo){
-        return this.sysInfo.fw_ver;
+      if(this.getSysInfo()){
+        return this.getSysInfo().fw_ver;
       }
       return '';
     }
   
     get hardwareRevision(): string {
-      if(this.sysInfo){
-        return this.sysInfo.hw_ver;
+      if(this.getSysInfo()){
+        return this.getSysInfo().hw_ver;
       }
       return '';
+    }
+
+    protected setSysInfo(sysInfo:PlugSysinfo){
+      this._plugSysInfo = sysInfo;
+    }
+
+    public getSysInfo():PlugSysinfo{
+      return this._plugSysInfo;
     }
 }

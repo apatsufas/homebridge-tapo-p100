@@ -1,8 +1,9 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { P100Accessory } from './platformAccessory';
+import { P100Accessory } from './platformP100Accessory';
 import { parseConfig, TapoConfig } from './config';
+import { L510EAccessory } from './platformL510EAccessory';
 
 /**
  * TapoPlatform
@@ -86,7 +87,11 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
 
             // create the accessory handler for the restored accessory
             // this is imported from `platformAccessory.ts`
-            new P100Accessory(this.log, this, existingAccessory);
+            if(device.type && device.type.toLowerCase() === 'light'){
+              new L510EAccessory(this.log, this, existingAccessory);
+            } else{
+              new P100Accessory(this.log, this, existingAccessory);
+            }
       
             // update accessory cache with any changes to the accessory details and information
             this.api.updatePlatformAccessories([existingAccessory]);
@@ -109,7 +114,11 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
 
           // create the accessory handler for the newly create accessory
           // this is imported from `platformAccessory.ts`
-          new P100Accessory(this.log, this, accessory);
+          if(device.type && device.type.toLowerCase() === 'light'){
+            new L510EAccessory(this.log, this, accessory);
+          } else{
+            new P100Accessory(this.log, this, accessory);
+          }
 
           // link the accessory to your platform
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
