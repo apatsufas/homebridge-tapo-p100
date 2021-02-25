@@ -25,7 +25,9 @@
   "keywords": [
     "homebridge-plugin",
     "tapo",
-    "p100"
+    "p100",
+    "l510e",
+    "l530"
   ],
   "dependencies": {
     "axios": "^0.21.1",
