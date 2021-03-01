@@ -55,7 +55,7 @@ export default class L510E extends P100 {
         if(res.data.error_code){
           const errorCode = res.data.error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('344 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('58 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
                 
