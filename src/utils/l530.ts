@@ -58,7 +58,7 @@ export default class L530 extends L510E {
         if(res.data.error_code){
           const errorCode = res.data.error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('344 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('61 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
                 
@@ -68,19 +68,19 @@ export default class L530 extends L510E {
           if(response.error_code !== 0){
             const errorCode = response.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('354 Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('71 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
           return true;
         } catch (error){
           const errorCode = JSON.parse(decryptedResponse).error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('361 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('78 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
       })
       .catch((error:any) => {
-        this.log.error('Error: ' + error.message);
+        this.log.error('83 Error: ' + error.message);
         return new Error(error);
       });
   }
@@ -118,7 +118,7 @@ export default class L530 extends L510E {
         if(res.data.error_code){
           const errorCode = res.data.error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('344 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('121 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
                 
@@ -128,19 +128,19 @@ export default class L530 extends L510E {
           if(response.error_code !== 0){
             const errorCode = response.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('354 Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('131 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
           return true;
         } catch (error){
           const errorCode = JSON.parse(decryptedResponse).error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('361 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('138 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
       })
       .catch((error:any) => {
-        this.log.error('Error: ' + error.message);
+        this.log.error('143 Error: ' + error.message);
         return new Error(error);
       });
   }
@@ -178,7 +178,7 @@ export default class L530 extends L510E {
         if(res.data.error_code){
           const errorCode = res.data.error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('344 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('181 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
                 
@@ -188,19 +188,19 @@ export default class L530 extends L510E {
           if(response.error_code !== 0){
             const errorCode = response.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('354 Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('191 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
           return true;
         } catch (error){
           const errorCode = JSON.parse(decryptedResponse).error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('361 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('198 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
       })
       .catch((error:any) => {
-        this.log.error('Error: ' + error.message);
+        this.log.error('203 Error: ' + error.message);
         return new Error(error);
       });
   }

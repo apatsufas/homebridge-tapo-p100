@@ -53,10 +53,13 @@
             "type": {
               "title": "Colorlight, Light or Plug",
               "type": "string",
-              "required": false,
-              "examples": [
-                "plug"
-            ]
+              "default": "plug",
+              "oneOf": [
+                { "title": "Plug", "enum": ["Plug"] },
+                { "title": "Light", "enum": ["Light"] },
+                { "title": "Colorlight", "enum": ["Colorlight"] }
+              ],
+              "required": false
             }
           }
         }

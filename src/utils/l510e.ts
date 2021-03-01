@@ -65,19 +65,19 @@ export default class L510E extends P100 {
           if(response.error_code !== 0){
             const errorCode = response.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('354 Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('68 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
           return true;
         } catch (error){
           const errorCode = JSON.parse(decryptedResponse).error_code;
           const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('361 Error Code: ' + errorCode + ', ' + errorMessage);
+          this.log.error('75 Error Code: ' + errorCode + ', ' + errorMessage);
           return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
         }
       })
       .catch((error:any) => {
-        this.log.error('Error: ' + error.message);
+        this.log.error('80 Error: ' + error.message);
         return new Error(error);
       });
   }

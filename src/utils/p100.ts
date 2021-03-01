@@ -91,7 +91,7 @@ export default class P100 {
           if(res.data.error_code){
             const errorCode = res.data.error_code;
             const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('99 Error Code: ' + errorCode + ', ' + errorMessage);
+            this.log.error('94 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
 
@@ -108,7 +108,7 @@ export default class P100 {
           }
         })
         .catch((error: any) => {
-          this.log.error('Error: ' + error.message);
+          this.log.error('111 Error: ' + error.message);
           return new Error(error);
         });
     }
@@ -244,7 +244,7 @@ export default class P100 {
           }
         })
         .catch((error:any) => {
-          this.log.error('Error: ' + error.message);
+          this.log.error('247 Error: ' + error.message);
           return new Error(error);
         });
     }
@@ -303,7 +303,7 @@ export default class P100 {
           }
         })
         .catch((error:any) => {
-          this.log.error('Error: ' + error.message);
+          this.log.error('306 Error: ' + error.message);
           return new Error(error);
         });
     }
@@ -368,7 +368,7 @@ export default class P100 {
           }
         })
         .catch((error:any) => {
-          this.log.error('Error: ' + error.message);
+          this.log.error('371 Error: ' + error.message);
           return new Error(error);
         });
     }
