@@ -27,7 +27,8 @@
     "tapo",
     "p100",
     "l510e",
-    "l530"
+    "l530",
+    "tplink"
   ],
   "dependencies": {
     "axios": "^0.21.1",
