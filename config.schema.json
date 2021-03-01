@@ -51,7 +51,7 @@
             ]
             },
             "type": {
-              "title": "Light or Plug",
+              "title": "Colorlight, Light or Plug",
               "type": "string",
               "required": false,
               "examples": [

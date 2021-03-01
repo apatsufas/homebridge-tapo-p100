@@ -3,7 +3,7 @@ import TapoPlatform from './platform';
 import L510E from './utils/l510e';
 
 /**
- * P100 Accessory
+ * L510E Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
