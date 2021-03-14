@@ -8,7 +8,7 @@
 
 # Homebridge Tapo Platform Plugin
 
-This is a Homebridge platform plugin for the TP-Link Tapo P100 Plugs and L510E, L530 Lightbulbs.
+This is a Homebridge platform plugin for the TP-Link Tapo P100, P105 Plugs and L510E, L530 Lightbulbs.
 
 Tested with:
 
@@ -99,8 +99,6 @@ Example response from this endpoint:
 This plugin will also allow you to control the Tapo Plugs and Lights even if you have blocked the internet connectivity of the device.
 
 I created the plugin for personal use and wanted to share it with other people too.
-
-Should also work with the P105 plugs (haven't tested it though).
 
 ### Thanks / Credits
 
