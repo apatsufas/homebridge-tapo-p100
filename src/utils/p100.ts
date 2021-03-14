@@ -201,7 +201,7 @@ export default class P100 {
             '"params": {'+
                 '"device_on": false'+
                 '},'+
-                '"terminalUUID": ' + this.terminalUUID + ',' +
+                '"terminalUUID": "' + this.terminalUUID + '",' +
                 '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                 '};';
       const headers = {
@@ -262,7 +262,7 @@ export default class P100 {
               '"params": {'+
                   '"device_on": true'+
                   '},'+
-                  '"terminalUUID": ' + this.terminalUUID + ',' +
+                  '"terminalUUID": "' + this.terminalUUID + '",' +
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
       const headers = {
