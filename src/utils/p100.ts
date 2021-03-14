@@ -27,6 +27,7 @@ export default class P100 {
       '-1501': 'Invalid Request or Credentials',
       '1002': 'Incorrect Request',
       '-1003': 'JSON formatting error ',
+      '9999': 'Undocumented error. Try restarting Homebridge',
     };
 
     constructor(
