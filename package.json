@@ -32,7 +32,8 @@
   ],
   "dependencies": {
     "axios": "^0.21.1",
-    "lodash.defaults": "^4.2.0"
+    "lodash.defaults": "^4.2.0",
+    "uuid": "8.3.2"
   },
   "devDependencies": {
     "@types/node": "^14.14.22",

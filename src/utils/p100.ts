@@ -1,6 +1,7 @@
 import { Logger } from 'homebridge';
 import { PlugSysinfo } from '../homekit-device/types';
 import TpLinkCipher from './tpLinkCipher';
+import { v4 as uuidv4 } from 'uuid';
 
 export default class P100 {
 
@@ -14,6 +15,7 @@ export default class P100 {
     protected ip:string;
     protected cookie!:string;
     protected token!:string;
+    private terminalUUID:string;
     private _plugSysInfo!:PlugSysinfo;
 
     protected tpLinkCipher!:TpLinkCipher;
@@ -21,6 +23,7 @@ export default class P100 {
     protected ERROR_CODES = {
       '0': 'Success',
       '-1010': 'Invalid Public Key Length',
+      '-1012': 'Invalid terminalUUID',
       '-1501': 'Invalid Request or Credentials',
       '1002': 'Incorrect Request',
       '-1003': 'JSON formatting error ',
@@ -36,6 +39,7 @@ export default class P100 {
       this.ip = ipAddress;
       this.encryptCredentials(email, password);
       this.createKeyPair();
+      this.terminalUUID = uuidv4();
     }
 
     private encryptCredentials(email : string, password: string){
@@ -197,6 +201,7 @@ export default class P100 {
             '"params": {'+
                 '"device_on": false'+
                 '},'+
+                '"terminalUUID": ' + this.terminalUUID + ',' +
                 '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                 '};';
       const headers = {
@@ -257,6 +262,7 @@ export default class P100 {
               '"params": {'+
                   '"device_on": true'+
                   '},'+
+                  '"terminalUUID": ' + this.terminalUUID + ',' +
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
       const headers = {
