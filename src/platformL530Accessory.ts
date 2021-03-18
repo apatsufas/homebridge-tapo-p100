@@ -170,7 +170,7 @@ export class L530Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setHue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l530.setHue(value as number).then(() => {
+    this.l530.setColor(value as number, this.l530.getSysInfo().saturation).then(() => {
       this.platform.log.debug('Set Characteristic Hue ->', value);
 
       // you must call the callback function
@@ -202,7 +202,7 @@ export class L530Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setSaturation(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l530.setSaturation(value as number).then(() => {
+    this.l530.setColor(this.l530.getSysInfo().hue, value as number).then(() => {
       this.platform.log.debug('Set Characteristic Saturation ->', value);
 
       // you must call the callback function

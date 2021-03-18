@@ -205,6 +205,67 @@ export default class L530 extends L510E {
       });
   }
 
+  async setColor(hue:number, saturation:number){
+    const URL = 'http://' + this.ip + '/app?token=' + this.token;
+
+    const payload = '{'+
+              '"method": "set_device_info",'+
+              '"params": {'+
+                  '"hue": ' + hue +
+                  '"saturation": ' + saturation +
+                  '},'+
+                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
+                  '};';
+
+    const headers = {
+      'Cookie': this.cookie,
+    };
+              
+    const encryptedPayload = this.tpLinkCipher.encrypt(payload);
+                      
+    const securePassthroughPayload = {
+      'method':'securePassthrough',
+      'params':{
+        'request': encryptedPayload,
+      },
+    };
+                      
+    const config = {
+      headers: headers,
+    };
+
+    return this.axios.post(URL, securePassthroughPayload, config)
+      .then((res) => {
+        if(res.data.error_code){
+          const errorCode = res.data.error_code;
+          const errorMessage = this.ERROR_CODES[errorCode];
+          this.log.error('242 Error Code: ' + errorCode + ', ' + errorMessage);
+          return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+        }
+                
+        const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
+        try{
+          const response = JSON.parse(decryptedResponse);
+          if(response.error_code !== 0){
+            const errorCode = response.error_code;
+            const errorMessage = this.ERROR_CODES[errorCode];
+            this.log.error('252 Error Code: ' + errorCode + ', ' + errorMessage);
+            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+          }
+          return true;
+        } catch (error){
+          const errorCode = JSON.parse(decryptedResponse).error_code;
+          const errorMessage = this.ERROR_CODES[errorCode];
+          this.log.error('259 Error Code: ' + errorCode + ', ' + errorMessage);
+          return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+        }
+      })
+      .catch((error:any) => {
+        this.log.error('264 Error: ' + error.message);
+        return new Error(error);
+      });
+  }
+
   protected setSysInfo(sysInfo:ColorLightSysinfo){
     this._colorLightSysInfo = sysInfo;
   }
