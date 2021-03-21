@@ -366,6 +366,8 @@ export default class P100 {
               return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
             }
             this.setSysInfo(response.result);
+            this.log.debug('Device Info: ', response.result);
+
             return this.getSysInfo();
           } catch (error){
             const errorCode = JSON.parse(decryptedResponse).error_code;
