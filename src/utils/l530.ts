@@ -71,6 +71,8 @@ export default class L530 extends L510E {
             this.log.error('71 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
+          this.log.debug('Set Color Temp Response ' + response);
+
           return true;
         } catch (error){
           const errorCode = JSON.parse(decryptedResponse).error_code;
@@ -252,6 +254,8 @@ export default class L530 extends L510E {
             this.log.error('252 Error Code: ' + errorCode + ', ' + errorMessage);
             return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
           }
+          this.log.debug('Set Color Response ' + response);
+
           return true;
         } catch (error){
           const errorCode = JSON.parse(decryptedResponse).error_code;
