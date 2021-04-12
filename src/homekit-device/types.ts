@@ -12,6 +12,7 @@ export type PlugSysinfo = CommonSysinfo &{
     hw_id: string;
     fw_id: string;
     device_on: boolean;
+    last_update:number;
   };
 
 export type LightSysinfo = PlugSysinfo &{ 

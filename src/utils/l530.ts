@@ -213,7 +213,7 @@ export default class L530 extends L510E {
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
-                  '"hue": ' + hue +
+                  '"hue": ' + hue + ','+
                   '"saturation": ' + saturation +
                   '},'+
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
@@ -272,6 +272,7 @@ export default class L530 extends L510E {
 
   protected setSysInfo(sysInfo:ColorLightSysinfo){
     this._colorLightSysInfo = sysInfo;
+    this._colorLightSysInfo.last_update = Date.now();
   }
 
   public getSysInfo():ColorLightSysinfo{

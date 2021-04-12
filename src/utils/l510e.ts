@@ -84,6 +84,7 @@ export default class L510E extends P100 {
 
   protected setSysInfo(sysInfo:LightSysinfo){
     this._lightSysInfo = sysInfo;
+    this._lightSysInfo.last_update = Date.now();
   }
 
   public getSysInfo():LightSysinfo{

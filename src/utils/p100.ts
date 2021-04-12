@@ -324,6 +324,12 @@ export default class P100 {
     }
     
     async getDeviceInfo(): Promise<PlugSysinfo>{
+      if(this.getSysInfo() && (Date.now() - this.getSysInfo().last_update) < 2000){
+        return new Promise((resolve) => {
+          resolve(this.getSysInfo());
+        });
+      }
+
       const URL = 'http://' + this.ip + '/app?token=' + this.token;
           
       const payload = '{'+
@@ -432,6 +438,7 @@ export default class P100 {
 
     protected setSysInfo(sysInfo:PlugSysinfo){
       this._plugSysInfo = sysInfo;
+      this._plugSysInfo.last_update = Date.now();
     }
 
     public getSysInfo():PlugSysinfo{

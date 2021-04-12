@@ -23,7 +23,7 @@ export class L530Accessory {
     this.l530.handshake().then(() => {
       this.l530.login().then(() => {
         this.l530.getDeviceInfo().then((sysInfo) => {
-          this.log.debug('SysInfo: ' + sysInfo);
+          this.log.debug('SysInfo: ', sysInfo);
 
           // set accessory information
           this.accessory.getService(this.platform.Service.AccessoryInformation)!
