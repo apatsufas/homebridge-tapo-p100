@@ -25,37 +25,12 @@ export default class L530 extends L510E {
   }
 
   async setColorTemp(color_temp:number):Promise<true>{
-    this.log.info('Color Temp Homekit :' + color_temp);
     const transformedColorTemp = this.transformColorTemp(this.homekitColorTempRange, this.tapoColorTempRange, color_temp);
 
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
                   '"color_temp": ' + transformedColorTemp +
-                  '},'+
-                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                  '};';
-
-    return this.handleRequest(payload);
-  }
-
-  async setHue(hue:number):Promise<true>{
-    const payload = '{'+
-              '"method": "set_device_info",'+
-              '"params": {'+
-                  '"hue": ' + hue +
-                  '},'+
-                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                  '};';
-
-    return this.handleRequest(payload);
-  }
-
-  async setSaturation(saturation:number):Promise<true>{
-    const payload = '{'+
-              '"method": "set_device_info",'+
-              '"params": {'+
-                  '"saturation": ' + saturation +
                   '},'+
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';

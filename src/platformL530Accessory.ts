@@ -140,7 +140,9 @@ export class L530Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.log.info('Color Temp Homekit :' + value);
     this.l530.setColorTemp(value as number).then(() => {
+      this.l530.getSysInfo().color_temp = value as number;
       this.platform.log.debug('Set Characteristic Color Temperature ->', value);
 
       // you must call the callback function
