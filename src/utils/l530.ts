@@ -25,12 +25,12 @@ export default class L530 extends L510E {
   }
 
   async setColorTemp(color_temp:number):Promise<true>{
-    const transformedColorTemp = this.transformColorTemp(this.homekitColorTempRange, this.tapoColorTempRange, color_temp);
-    this.log.debug('Color Temp Tapo :' + Math.round(transformedColorTemp));
+    const transformedColorTemp = this.transformColorTemp(color_temp);
+    this.log.debug('Color Temp Tapo :' + transformedColorTemp);
 
-    const roundedValue = Math.round(transformedColorTemp) > 6500 ? 6500 : Math.round(transformedColorTemp) < 2500 ? 
-      2500 :Math.round(transformedColorTemp);
-      
+    const roundedValue = transformedColorTemp > 6500 ? 6500 : transformedColorTemp < 2500 ? 
+      2500 : transformedColorTemp;
+
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
@@ -70,16 +70,14 @@ export default class L530 extends L510E {
     return this._colorLightSysInfo;
   }
 
-  private transformColorTemp(fromRange: number[], toRange: number[], value: number){
-    const oldRange = (fromRange[1] - fromRange[0]);  
-    const newRange = (toRange[1] - toRange[0]);  
-    return (((value - fromRange[0]) * newRange) / oldRange) + toRange[0];
+  private transformColorTemp(value: number){
+    return Math.floor(1000000 / value);
   }
 
   async getColorTemp(): Promise<number>{
     return super.getDeviceInfo().then(() => {
-      const newValue = this.transformColorTemp(this.tapoColorTempRange, this.homekitColorTempRange, this.getSysInfo().color_temp);
-      return newValue > 500 ? 500 : (newValue < 140 ? 140 : newValue);
+      const newValue = this.transformColorTemp(this.getSysInfo().color_temp);
+      return newValue > 370 ? 370 : (newValue < 154 ? 154 : newValue);
     });
   }
 
