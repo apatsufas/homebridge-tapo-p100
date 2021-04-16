@@ -60,7 +60,7 @@ export class L510EAccessory {
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.l510e.setPowerState(value as boolean).then(() => {
       this.platform.log.debug('Set Characteristic On ->', value);
-
+      this.l510e.getSysInfo().device_on = value as boolean;
       // you must call the callback function
       callback(null);
     });
@@ -91,12 +91,18 @@ export class L510EAccessory {
    * These are sent when the user changes the state of an accessory.
    */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l510e.setBrightness(value as number).then(() => {
-      this.platform.log.debug('Set Characteristic Brightness ->', value);
+    if(this.l510e.getSysInfo().device_on){
+      this.l510e.setBrightness(value as number).then(() => {
+        this.platform.log.debug('Set Characteristic Brightness ->', value);
+        this.l510e.getSysInfo().brightness = value as number;
 
-      // you must call the callback function
+        // you must call the callback function
+        callback(null);
+      });
+    } else{
       callback(null);
-    });
+
+    }
   }
 
   /**

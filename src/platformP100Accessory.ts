@@ -59,6 +59,7 @@ export class P100Accessory {
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.p100.setPowerState(value as boolean).then(() => {
       this.platform.log.debug('Set Characteristic On ->', value);
+      this.p100.getSysInfo().device_on = value as boolean;
 
       // you must call the callback function
       callback(null);
