@@ -63,6 +63,12 @@ export default class L530 extends L510E {
   }
 
   async setColor(hue:number, saturation:number):Promise<true>{
+    if(!hue){
+      hue = 0;
+    }
+    if(!saturation){
+      saturation = 0;
+    }
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
