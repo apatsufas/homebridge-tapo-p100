@@ -60,8 +60,8 @@ export class L530Accessory {
           this.service.getCharacteristic(this.platform.Characteristic.ColorTemperature)
             .on('set', this.setColorTemp.bind(this))                // SET - bind to the `setColorTemp` method below
             .on('get', this.getColorTemp.bind(this)).setProps({
-              minValue: 140,
-              maxValue: 500,
+              minValue: 154,
+              maxValue: 370,
             });              // GET - bind to the `getColorTemp` method below
 
           // register handlers for the Hue Characteristic
