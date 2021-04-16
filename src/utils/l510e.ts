@@ -22,9 +22,7 @@ export default class L510E extends P100 {
     });
   }
 
-  async setBrightness(brightness:number){
-    const URL = 'http://' + this.ip + '/app?token=' + this.token;
-
+  async setBrightness(brightness:number):Promise<true>{
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
@@ -33,53 +31,7 @@ export default class L510E extends P100 {
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
 
-    const headers = {
-      'Cookie': this.cookie,
-    };
-              
-    const encryptedPayload = this.tpLinkCipher.encrypt(payload);
-                      
-    const securePassthroughPayload = {
-      'method':'securePassthrough',
-      'params':{
-        'request': encryptedPayload,
-      },
-    };
-                      
-    const config = {
-      headers: headers,
-    };
-
-    return this.axios.post(URL, securePassthroughPayload, config)
-      .then((res) => {
-        if(res.data.error_code){
-          const errorCode = res.data.error_code;
-          const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('58 Error Code: ' + errorCode + ', ' + errorMessage);
-          return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-        }
-                
-        const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
-        try{
-          const response = JSON.parse(decryptedResponse);
-          if(response.error_code !== 0){
-            const errorCode = response.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('68 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-          }
-          return true;
-        } catch (error){
-          const errorCode = JSON.parse(decryptedResponse).error_code;
-          const errorMessage = this.ERROR_CODES[errorCode];
-          this.log.error('75 Error Code: ' + errorCode + ', ' + errorMessage);
-          return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-        }
-      })
-      .catch((error:any) => {
-        this.log.error('80 Error: ' + error.message);
-        return new Error(error);
-      });
+    return this.handleRequest(payload);
   }
 
   protected setSysInfo(sysInfo:LightSysinfo){

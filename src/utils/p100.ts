@@ -94,10 +94,7 @@ export default class P100 {
           this.log.debug('Received Handshake P100 on host response: ' + this.ip);
 
           if(res.data.error_code){
-            const errorCode = res.data.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('94 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+            return this.handleError(res.data.error_code, '97');
           }
 
           try{
@@ -106,10 +103,7 @@ export default class P100 {
             this.cookie = res.headers['set-cookie'][0].split(';')[0];
             return;
           } catch (error){
-            const errorCode = res.data.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('106 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+            return this.handleError(res.data.error_code, '106');
           }
         })
         .catch((error: any) => {
@@ -149,27 +143,18 @@ export default class P100 {
       await this.axios.post(URL, securePassthroughPayload, config)
         .then((res:any) => {
           if(res.data.error_code){
-            const errorCode = res.data.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('149 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+            return this.handleError(res.data.error_code, '146');
           }
           const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
           try{
             const response = JSON.parse(decryptedResponse);
             if(response.error_code !== 0){
-              const errorCode = response.error_code;
-              const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('158 Error Code: ' + errorCode + ', ' + errorMessage);
-              return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+              return this.handleError(res.data.error_code, '152');
             }
             this.token = response.result.token;
             return;
           } catch (error){
-            const errorCode = JSON.parse(decryptedResponse).error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('166 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+            return this.handleError(JSON.parse(decryptedResponse).error_code, '157');
           }
         })
         .catch((error: any) => {
@@ -195,8 +180,6 @@ export default class P100 {
     }
 
     async turnOff():Promise<true>{
-      const URL = 'http://' + this.ip + '/app?token=' + this.token;
-      
       const payload = '{'+
             '"method": "set_device_info",'+
             '"params": {'+
@@ -205,59 +188,10 @@ export default class P100 {
                 '"terminalUUID": "' + this.terminalUUID + '",' +
                 '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                 '};';
-      const headers = {
-        'Cookie': this.cookie,
-      };
-
-      const encryptedPayload = this.tpLinkCipher.encrypt(payload);
-        
-      const securePassthroughPayload = {
-        'method':'securePassthrough',
-        'params':{
-          'request': encryptedPayload,
-        },
-      };
-        
-      const config = {
-        headers: headers,
-      };
-        
-      return this.axios.post(URL, securePassthroughPayload, config)
-        .then((res) => {
-          //console.log(res);
-          if(res.data.error_code){
-            const errorCode = res.data.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('225 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-          }
-              
-          const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
-          try{
-            const response = JSON.parse(decryptedResponse);
-            if(response.error_code !== 0){
-              const errorCode = response.error_code;
-              const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('235 Error Code: ' + errorCode + ', ' + errorMessage);
-              return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-            }
-            return true;
-          } catch (error){
-            const errorCode = JSON.parse(decryptedResponse).error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('242 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-          }
-        })
-        .catch((error:any) => {
-          this.log.error('247 Error: ' + error.message);
-          return new Error(error);
-        });
+      return this.handleRequest(payload);
     }
 
-    async turnOn():Promise<true>{
-      const URL = 'http://' + this.ip + '/app?token=' + this.token;
-        
+    async turnOn():Promise<true>{        
       const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
@@ -266,53 +200,8 @@ export default class P100 {
                   '"terminalUUID": "' + this.terminalUUID + '",' +
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
-      const headers = {
-        'Cookie': this.cookie,
-      };
-  
-      const encryptedPayload = this.tpLinkCipher.encrypt(payload);
-          
-      const securePassthroughPayload = {
-        'method':'securePassthrough',
-        'params':{
-          'request': encryptedPayload,
-        },
-      };
-          
-      const config = {
-        headers: headers,
-      };
-          
-      return this.axios.post(URL, securePassthroughPayload, config)
-        .then((res) => {
-          if(res.data.error_code){
-            const errorCode = res.data.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('284 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-          }
-                
-          const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
-          try{
-            const response = JSON.parse(decryptedResponse);
-            if(response.error_code !== 0){
-              const errorCode = response.error_code;
-              const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('294 Error Code: ' + errorCode + ', ' + errorMessage);
-              return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-            }
-            return true;
-          } catch (error){
-            const errorCode = JSON.parse(decryptedResponse).error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('301 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
-          }
-        })
-        .catch((error:any) => {
-          this.log.error('306 Error: ' + error.message);
-          return new Error(error);
-        });
+       
+      return this.handleRequest(payload);
     }
 
     async setPowerState(state:boolean): Promise<true>{
@@ -356,30 +245,21 @@ export default class P100 {
       return this.axios.post(URL, securePassthroughPayload, config)
         .then((res) => {
           if(res.data.error_code){
-            const errorCode = res.data.error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('348 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+            return this.handleError(res.data.error_code, '326');
           }
                   
           const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
           try{
             const response = JSON.parse(decryptedResponse);
             if(response.error_code !== 0){
-              const errorCode = response.error_code;
-              const errorMessage = this.ERROR_CODES[errorCode];
-              this.log.error('358 Error Code: ' + errorCode + ', ' + errorMessage);
-              return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+              return this.handleError(response.error_code, '333');
             }
             this.setSysInfo(response.result);
             this.log.debug('Device Info: ', response.result);
 
             return this.getSysInfo();
           } catch (error){
-            const errorCode = JSON.parse(decryptedResponse).error_code;
-            const errorMessage = this.ERROR_CODES[errorCode];
-            this.log.error('366 Error Code: ' + errorCode + ', ' + errorMessage);
-            return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+            return this.handleError(JSON.parse(decryptedResponse).error_code, '340');
           }
         })
         .catch((error:any) => {
@@ -443,5 +323,66 @@ export default class P100 {
 
     public getSysInfo():PlugSysinfo{
       return this._plugSysInfo;
+    }
+
+    protected handleError(errorCode:string, line:string):Error{
+      const errorMessage = this.ERROR_CODES[errorCode];
+      this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage);
+      if(errorCode === '9999'){
+        this.log.info('Trying to reconnect...');
+        this.reconnect();
+      }
+      return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+    }
+
+    protected handleRequest(payload:string):Promise<true>{
+      const URL = 'http://' + this.ip + '/app?token=' + this.token;
+        
+      const headers = {
+        'Cookie': this.cookie,
+      };
+  
+      const encryptedPayload = this.tpLinkCipher.encrypt(payload);
+          
+      const securePassthroughPayload = {
+        'method':'securePassthrough',
+        'params':{
+          'request': encryptedPayload,
+        },
+      };
+          
+      const config = {
+        headers: headers,
+      };
+          
+      return this.axios.post(URL, securePassthroughPayload, config)
+        .then((res) => {
+          if(res.data.error_code){
+            return this.handleError(res.data.error_code, '357');
+          }
+                
+          const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
+          try{
+            const response = JSON.parse(decryptedResponse);
+            if(response.error_code !== 0){
+              return this.handleError(response.error_code, '364');
+            }
+            return true;
+          } catch (error){
+            return this.handleError(JSON.parse(decryptedResponse).error_code, '368');
+          }
+        })
+        .catch((error:any) => {
+          this.log.error('372 Error: ' + error.message);
+          return new Error(error);
+        });
+    }
+
+    private reconnect():void{
+      this.handshake().then(() => {
+        this.login().then(() => {
+          this.getDeviceInfo();
+        });
+      });
     }
 }

@@ -188,10 +188,14 @@ export class L530Accessory {
    */
   getHue(callback: CharacteristicGetCallback) {
     this.l530.getDeviceInfo().then((response) => {
-      const hue = response.hue;
+      let hue = response.hue;
 
       this.platform.log.debug('Get Characteristic Hue ->', hue);
 
+      //Tapo only returns the hue value when a color has been set. So we need to hanle the cases when an color is not set
+      if(!hue){
+        hue = 0;
+      }
       // you must call the callback function
       // the first argument should be null if there were no errors
       // the second argument should be the value to return
@@ -221,10 +225,13 @@ export class L530Accessory {
    */
   getSaturation(callback: CharacteristicGetCallback) {
     this.l530.getDeviceInfo().then((response) => {
-      const saturation = response.saturation;
+      let saturation = response.saturation;
 
       this.platform.log.debug('Get Characteristic Saturation ->', saturation);
-
+      //Tapo only returns the saturation value when a color has been set. So we need to hanle the cases when an color is not set
+      if(!saturation){
+        saturation = 0;
+      }
       // you must call the callback function
       // the first argument should be null if there were no errors
       // the second argument should be the value to return
