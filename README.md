@@ -14,6 +14,7 @@ Tested with:
 
 - Tapo P100 (EU)
 - Tapo L510E
+- Tapo L530
 
 ## Installation
 
