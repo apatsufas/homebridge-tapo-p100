@@ -6,7 +6,7 @@ export default class L530 extends L510E {
 
   private _colorLightSysInfo!:ColorLightSysinfo;
   private tapoColorTempRange = [6500, 2500];
-  private homekitColorTempRange = [154, 370];
+  private homekitColorTempRange = [140, 500];
 
   constructor(
         public readonly log: Logger,
