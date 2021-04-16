@@ -1,4 +1,5 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, AdaptiveLightingController } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
+  AdaptiveLightingController } from 'homebridge';
 import TapoPlatform from './platform';
 import L530 from './utils/l530';
 
