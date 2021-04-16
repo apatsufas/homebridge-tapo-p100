@@ -26,12 +26,15 @@ export default class L530 extends L510E {
 
   async setColorTemp(color_temp:number):Promise<true>{
     const transformedColorTemp = this.transformColorTemp(this.homekitColorTempRange, this.tapoColorTempRange, color_temp);
-    this.log.debug('Color Temp Tapo :' + transformedColorTemp);
+    this.log.debug('Color Temp Tapo :' + Math.round(transformedColorTemp));
 
+    const roundedValue = Math.round(transformedColorTemp) > 6500 ? 6500 : Math.round(transformedColorTemp) < 2500 ? 
+      2500 :Math.round(transformedColorTemp);
+      
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
-                  '"color_temp": ' + transformedColorTemp +
+                  '"color_temp": ' + roundedValue +
                   '},'+
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
@@ -75,7 +78,8 @@ export default class L530 extends L510E {
 
   async getColorTemp(): Promise<number>{
     return super.getDeviceInfo().then(() => {
-      return this.transformColorTemp(this.tapoColorTempRange, this.homekitColorTempRange, this.getSysInfo().color_temp);
+      const newValue = this.transformColorTemp(this.tapoColorTempRange, this.homekitColorTempRange, this.getSysInfo().color_temp);
+      return newValue > 500 ? 500 : (newValue < 140 ? 140 : newValue);
     });
   }
 
