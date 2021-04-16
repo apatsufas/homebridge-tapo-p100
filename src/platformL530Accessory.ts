@@ -27,15 +27,15 @@ export class L530Accessory {
           this.log.debug('SysInfo: ', sysInfo);
 
           // Setup the adaptive lighting controller if available
-          if (
-            this.platform.api.versionGreaterOrEqual &&
-            this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')
-          ) {
-            this.adaptiveLightingController = new platform.api.hap.AdaptiveLightingController(
-              this.service,
-            );
-            this.accessory.configureController(this.adaptiveLightingController);
-          }
+          // if (
+          //   this.platform.api.versionGreaterOrEqual &&
+          //   this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')
+          // ) {
+          //   this.adaptiveLightingController = new platform.api.hap.AdaptiveLightingController(
+          //     this.service,
+          //   );
+          //   this.accessory.configureController(this.adaptiveLightingController);
+          // }
 
           // set accessory information
           this.accessory.getService(this.platform.Service.AccessoryInformation)!
