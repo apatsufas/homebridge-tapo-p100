@@ -6,7 +6,7 @@ export default class L530 extends L510E {
 
   private _colorLightSysInfo!:ColorLightSysinfo;
   private tapoColorTempRange = [6500, 2500];
-  private homekitColorTempRange = [140, 500];
+  private homekitColorTempRange = [154, 370];
 
   constructor(
         public readonly log: Logger,
@@ -77,7 +77,8 @@ export default class L530 extends L510E {
 
   async getColorTemp(): Promise<number>{
     return super.getDeviceInfo().then(() => {
-      return this.transformColorTemp(this.tapoColorTempRange, this.homekitColorTempRange, this.getSysInfo().color_temp);
+      return 10 ** 6 / Number(this.getSysInfo().color_temp);
+      //return this.transformColorTemp(this.tapoColorTempRange, this.homekitColorTempRange, this.getSysInfo().color_temp);
     });
   }
 

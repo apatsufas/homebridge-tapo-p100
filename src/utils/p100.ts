@@ -328,10 +328,6 @@ export default class P100 {
     protected handleError(errorCode:string, line:string):Error{
       const errorMessage = this.ERROR_CODES[errorCode];
       this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage);
-      if(errorCode === '9999'){
-        this.log.info('Trying to reconnect...');
-        this.reconnect();
-      }
       return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
     }
 
@@ -378,8 +374,8 @@ export default class P100 {
         });
     }
 
-    private reconnect():void{
-      this.handshake().then(() => {
+    private async reconnect():Promise<void>{
+      return this.handshake().then(() => {
         this.login().then(() => {
           this.getDeviceInfo();
         });
