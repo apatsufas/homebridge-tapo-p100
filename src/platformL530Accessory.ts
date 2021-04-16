@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, AdaptiveLightingController } from 'homebridge';
 import TapoPlatform from './platform';
 import L530 from './utils/l530';
 
@@ -9,7 +9,7 @@ import L530 from './utils/l530';
  */
 export class L530Accessory {
   private service: Service;
-
+  private adaptiveLightingController!: AdaptiveLightingController;
   private l530: L530;
 
   constructor(
@@ -24,6 +24,17 @@ export class L530Accessory {
       this.l530.login().then(() => {
         this.l530.getDeviceInfo().then((sysInfo) => {
           this.log.debug('SysInfo: ', sysInfo);
+
+          // Setup the adaptive lighting controller if available
+          if (
+            this.platform.api.versionGreaterOrEqual &&
+            this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')
+          ) {
+            this.adaptiveLightingController = new platform.api.hap.AdaptiveLightingController(
+              this.service,
+            );
+            this.accessory.configureController(this.adaptiveLightingController);
+          }
 
           // set accessory information
           this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -47,7 +58,11 @@ export class L530Accessory {
           // register handlers for the ColorTemperature Characteristic
           this.service.getCharacteristic(this.platform.Characteristic.ColorTemperature)
             .on('set', this.setColorTemp.bind(this))                // SET - bind to the `setColorTemp` method below
-            .on('get', this.getColorTemp.bind(this));               // GET - bind to the `getColorTemp` method below
+            .on('get', this.getColorTemp.bind(this))
+            .setProps({
+              minValue: 154, // ~6500K
+              maxValue: 370, // ~1700K or ~2700K
+            });               // GET - bind to the `getColorTemp` method below
 
           // register handlers for the Hue Characteristic
           this.service.getCharacteristic(this.platform.Characteristic.Hue)
