@@ -26,6 +26,7 @@ export default class L530 extends L510E {
 
   async setColorTemp(color_temp:number):Promise<true>{
     const transformedColorTemp = this.transformColorTemp(this.homekitColorTempRange, this.tapoColorTempRange, color_temp);
+    this.log.debug('Color Temp Tapo :' + transformedColorTemp);
 
     const payload = '{'+
               '"method": "set_device_info",'+
