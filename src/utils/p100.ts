@@ -354,6 +354,9 @@ export default class P100 {
       return this.axios.post(URL, securePassthroughPayload, config)
         .then((res) => {
           if(res.data.error_code){
+            if(res.data.error_code === '9999'){
+              return this.reconnect();
+            }
             return this.handleError(res.data.error_code, '357');
           }
                 
