@@ -52,7 +52,7 @@ export class L530Accessory {
             .setProps({
               minValue: 154,
               maxValue: 400,
-              minStep: 0.1,
+              minStep: 1,
             });              // GET - bind to the `getColorTemp` method below
 
           // register handlers for the Hue Characteristic
