@@ -89,7 +89,11 @@ export default class P100 {
       };
       this.log.debug('Handshake P100 on host: ' + this.ip);
 
-      await this.axios.post(URL, payload)
+      const config = {
+        timeout: 2000,
+      };
+
+      await this.axios.post(URL, payload, config)
         .then((res:any) => {
           this.log.debug('Received Handshake P100 on host response: ' + this.ip);
 
