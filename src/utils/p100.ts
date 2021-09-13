@@ -232,44 +232,49 @@ export default class P100 {
         'Cookie': this.cookie,
       };
     
-      const encryptedPayload = this.tpLinkCipher.encrypt(payload);
+      if(this.tpLinkCipher){
+        const encryptedPayload = this.tpLinkCipher.encrypt(payload);
             
-      const securePassthroughPayload = {
-        'method':'securePassthrough',
-        'params':{
-          'request': encryptedPayload,
-        },
-      };
-            
-      const config = {
-        headers: headers,
-        timeout: 2000,
-      };
-            
-      return this.axios.post(URL, securePassthroughPayload, config)
-        .then((res) => {
-          if(res.data.error_code){
-            return this.handleError(res.data.error_code, '326');
-          }
-                  
-          const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
-          try{
-            const response = JSON.parse(decryptedResponse);
-            if(response.error_code !== 0){
-              return this.handleError(response.error_code, '333');
+        const securePassthroughPayload = {
+          'method':'securePassthrough',
+          'params':{
+            'request': encryptedPayload,
+          },
+        };
+              
+        const config = {
+          headers: headers,
+          timeout: 2000,
+        };
+              
+        return this.axios.post(URL, securePassthroughPayload, config)
+          .then((res) => {
+            if(res.data.error_code){
+              return this.handleError(res.data.error_code, '326');
             }
-            this.setSysInfo(response.result);
-            this.log.debug('Device Info: ', response.result);
-
-            return this.getSysInfo();
-          } catch (error){
-            return this.handleError(JSON.parse(decryptedResponse).error_code, '340');
-          }
-        })
-        .catch((error:any) => {
-          this.log.error('371 Error: ' + error.message);
-          return new Error(error);
-        });
+                    
+            const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
+            try{
+              const response = JSON.parse(decryptedResponse);
+              if(response.error_code !== 0){
+                return this.handleError(response.error_code, '333');
+              }
+              this.setSysInfo(response.result);
+              this.log.debug('Device Info: ', response.result);
+  
+              return this.getSysInfo();
+            } catch (error){
+              return this.handleError(JSON.parse(decryptedResponse).error_code, '340');
+            }
+          })
+          .catch((error:any) => {
+            this.log.error('371 Error: ' + error.message);
+            return new Error(error);
+          });
+      }
+      else{
+        return this.getSysInfo();
+      }
     }
 
     /**
@@ -342,45 +347,50 @@ export default class P100 {
         'Cookie': this.cookie,
       };
   
-      const encryptedPayload = this.tpLinkCipher.encrypt(payload);
+      if(this.tpLinkCipher){
+        const encryptedPayload = this.tpLinkCipher.encrypt(payload);
           
-      const securePassthroughPayload = {
-        'method':'securePassthrough',
-        'params':{
-          'request': encryptedPayload,
-        },
-      };
-          
-      const config = {
-        headers: headers,
-        timeout: 2000,
-      };
-          
-      return this.axios.post(URL, securePassthroughPayload, config)
-        .then((res) => {
-          if(res.data.error_code){
-            if(res.data.error_code === '9999' || res.data.error_code === 9999){
-              this.log.debug('Trying to reconnect...');
-              return this.reconnect();
+        const securePassthroughPayload = {
+          'method':'securePassthrough',
+          'params':{
+            'request': encryptedPayload,
+          },
+        };
+            
+        const config = {
+          headers: headers,
+          timeout: 2000,
+        };
+            
+        return this.axios.post(URL, securePassthroughPayload, config)
+          .then((res) => {
+            if(res.data.error_code){
+              if(res.data.error_code === '9999' || res.data.error_code === 9999){
+                this.log.debug('Trying to reconnect...');
+                return this.reconnect();
+              }
+              return this.handleError(res.data.error_code, '357');
             }
-            return this.handleError(res.data.error_code, '357');
-          }
-                
-          const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
-          try{
-            const response = JSON.parse(decryptedResponse);
-            if(response.error_code !== 0){
-              return this.handleError(response.error_code, '364');
+                  
+            const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
+            try{
+              const response = JSON.parse(decryptedResponse);
+              if(response.error_code !== 0){
+                return this.handleError(response.error_code, '364');
+              }
+              return true;
+            } catch (error){
+              return this.handleError(JSON.parse(decryptedResponse).error_code, '368');
             }
-            return true;
-          } catch (error){
-            return this.handleError(JSON.parse(decryptedResponse).error_code, '368');
-          }
-        })
-        .catch((error:any) => {
-          this.log.error('372 Error: ' + error.message);
-          return new Error(error);
-        });
+          })
+          .catch((error:any) => {
+            this.log.error('372 Error: ' + error.message);
+            return new Error(error);
+          });
+      }
+      return new Promise<true>((resolve, reject) => {
+        reject();
+      });
     }
 
     private async reconnect():Promise<void>{
