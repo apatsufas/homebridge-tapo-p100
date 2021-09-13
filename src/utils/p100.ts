@@ -127,40 +127,43 @@ export default class P100 {
         'Cookie': this.cookie,
       };
 
-      const encryptedPayload = this.tpLinkCipher.encrypt(payload);
+      if(this.tpLinkCipher){
+        const encryptedPayload = this.tpLinkCipher.encrypt(payload);
 
-      const securePassthroughPayload = {
-        'method':'securePassthrough',
-        'params':{
-          'request': encryptedPayload,
-        },
-      };
-
-      const config = {
-        headers: headers,
-      };
-
-      await this.axios.post(URL, securePassthroughPayload, config)
-        .then((res:any) => {
-          if(res.data.error_code){
-            return this.handleError(res.data.error_code, '146');
-          }
-          const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
-          try{
-            const response = JSON.parse(decryptedResponse);
-            if(response.error_code !== 0){
-              return this.handleError(res.data.error_code, '152');
+        const securePassthroughPayload = {
+          'method':'securePassthrough',
+          'params':{
+            'request': encryptedPayload,
+          },
+        };
+  
+        const config = {
+          headers: headers,
+          timeout: 2000,
+        };
+  
+        await this.axios.post(URL, securePassthroughPayload, config)
+          .then((res:any) => {
+            if(res.data.error_code){
+              return this.handleError(res.data.error_code, '146');
             }
-            this.token = response.result.token;
-            return;
-          } catch (error){
-            return this.handleError(JSON.parse(decryptedResponse).error_code, '157');
-          }
-        })
-        .catch((error: any) => {
-          this.log.error('Error: ' + error.message);
-          return new Error(error);
-        });
+            const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
+            try{
+              const response = JSON.parse(decryptedResponse);
+              if(response.error_code !== 0){
+                return this.handleError(res.data.error_code, '152');
+              }
+              this.token = response.result.token;
+              return;
+            } catch (error){
+              return this.handleError(JSON.parse(decryptedResponse).error_code, '157');
+            }
+          })
+          .catch((error: any) => {
+            this.log.error('Error: ' + error.message);
+            return new Error(error);
+          });
+      }
     }
 
     private decode_handshake_key(key:string){
@@ -240,6 +243,7 @@ export default class P100 {
             
       const config = {
         headers: headers,
+        timeout: 2000,
       };
             
       return this.axios.post(URL, securePassthroughPayload, config)
@@ -349,6 +353,7 @@ export default class P100 {
           
       const config = {
         headers: headers,
+        timeout: 2000,
       };
           
       return this.axios.post(URL, securePassthroughPayload, config)
