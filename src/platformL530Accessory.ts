@@ -75,8 +75,14 @@ export class L530Accessory {
             );
             this.accessory.configureController(this.adaptiveLightingController);
           }
+        }).catch(() => {
+          this.log.error('Get Device Info failed');
         });
+      }).catch(() => {
+        this.log.error('Login failed');
       });
+    }).catch(() => {
+      this.log.error('Handshake failed');
     });
     
     // get the Outlet service if it exists, otherwise create a new Outlet service

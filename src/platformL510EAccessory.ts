@@ -41,8 +41,14 @@ export class L510EAccessory {
           this.service.getCharacteristic(this.platform.Characteristic.Brightness)
             .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
             .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
+        }).catch(() => {
+          this.log.error('Get Device Info failed');
         });
+      }).catch(() => {
+        this.log.error('Login failed');
       });
+    }).catch(() => {
+      this.log.error('Handshake failed');
     });
     
     // get the Outlet service if it exists, otherwise create a new Outlet service

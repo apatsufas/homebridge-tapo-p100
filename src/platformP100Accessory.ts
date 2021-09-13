@@ -40,8 +40,14 @@ export class P100Accessory {
           // register handlers for the OutletInUse Characteristic
           this.service.getCharacteristic(this.platform.Characteristic.OutletInUse)
             .on('get', this.handleOutletInUseGet.bind(this));
+        }).catch(() => {
+          this.log.error('Get Device Info failed');
         });
+      }).catch(() => {
+        this.log.error('Login failed');
       });
+    }).catch(() => {
+      this.log.error('Handshake failed');
     });
     
     // get the Outlet service if it exists, otherwise create a new Outlet service

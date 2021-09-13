@@ -273,7 +273,9 @@ export default class P100 {
           });
       }
       else{
-        return this.getSysInfo();
+        return new Promise<PlugSysinfo>((resolve, reject) => {
+          reject();
+        });
       }
     }
 
