@@ -89,8 +89,12 @@ export default class P100 {
       };
       this.log.debug('Handshake P100 on host: ' + this.ip);
 
+      const headers = {
+        'Connection': 'Keep-Alive',
+      };
       const config = {
-        timeout: 2000,
+        timeout: 5000,
+        headers:headers,
       };
 
       await this.axios.post(URL, payload, config)
@@ -129,6 +133,7 @@ export default class P100 {
         
       const headers = {
         'Cookie': this.cookie,
+        'Connection': 'Keep-Alive',
       };
 
       if(this.tpLinkCipher){
@@ -351,6 +356,7 @@ export default class P100 {
         
       const headers = {
         'Cookie': this.cookie,
+        'Connection': 'Keep-Alive',
       };
   
       if(this.tpLinkCipher){
