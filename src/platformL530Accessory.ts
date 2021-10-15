@@ -83,8 +83,6 @@ export class L530Accessory {
             );
             this.accessory.configureController(this.adaptiveLightingController);
           }
-
-          this.updateConsumption();
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
