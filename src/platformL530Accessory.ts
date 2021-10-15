@@ -23,7 +23,7 @@ export class L530Accessory {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
     this.l530 = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
 
-    this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('power', accessory, {
+    this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,
       size:4096, 
       storage:'fs',     
