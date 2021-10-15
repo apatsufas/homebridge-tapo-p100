@@ -12,6 +12,8 @@ export class L530Accessory {
   private service: Service;
   private adaptiveLightingController!: AdaptiveLightingController;
   private l530: L530;
+  private fakeGatoHistoryService?;
+  private lastMeasurement: number | null = null;
 
   constructor(
     public readonly log: Logger,
@@ -20,6 +22,12 @@ export class L530Accessory {
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
     this.l530 = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
+
+    this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('power', accessory, {
+      log: this.log,
+      size:4096, 
+      storage:'fs',     
+    });
 
     this.l530.handshake().then(() => {
       this.l530.login().then(() => {
@@ -75,6 +83,8 @@ export class L530Accessory {
             );
             this.accessory.configureController(this.adaptiveLightingController);
           }
+
+          this.updateConsumption();
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
@@ -284,5 +294,38 @@ export class L530Accessory {
       // you must call the callback function
       callback(null, saturation);
     });
+  }
+
+  async updateConsumption(){
+    this.l530.getEnergyUsage().then((response) => {
+      if(this.lastMeasurement === null){
+        const now = new Date();
+        if(response.time_usage.today > 0){
+          let time = response.time_usage.today;
+          const power = response.power_usage.today / time;
+          while(time > 0){
+            now.setHours(now.getHours()-1, 0, 0, 0);
+            this.fakeGatoHistoryService.addEntry({
+              time: now.getTime() / 1000,
+              power: power,
+            });
+            time--;
+          }
+        }
+        this.lastMeasurement = response.power_usage.today;
+      } else{
+        this.platform.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
+        if (this.fakeGatoHistoryService) {
+          this.fakeGatoHistoryService.addEntry({
+            time: new Date().getTime() / 1000,
+            power: response.power_usage.today - this.lastMeasurement, //this.power
+          });
+        }
+      }
+    });
+
+    setTimeout(()=>{
+      this.updateConsumption();
+    }, 300000);
   }
 }

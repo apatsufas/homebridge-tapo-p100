@@ -5,6 +5,8 @@ import { P100Accessory } from './platformP100Accessory';
 import { parseConfig, TapoConfig } from './config';
 import { L510EAccessory } from './platformL510EAccessory';
 import { L530Accessory } from './platformL530Accessory';
+import fakegato from 'fakegato-history';
+import { P110Accessory } from './platformP110Accessory';
 
 /**
  * TapoPlatform
@@ -14,6 +16,7 @@ import { L530Accessory } from './platformL530Accessory';
 export default class TapoPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly FakeGatoHistoryService;
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
@@ -29,7 +32,7 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
     this.config = parseConfig(config);
     this.log.debug('config: %j', this.config);
     this.log.debug('Finished initializing platform:', this.config.name);
-
+    this.FakeGatoHistoryService = fakegato(this.api);
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
     // in order to ensure they weren't added to homebridge already. This event can also be used
@@ -92,6 +95,8 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
               new L530Accessory(this.log, this, existingAccessory);
             } else if(device.type && device.type.toLowerCase() === 'light'){
               new L510EAccessory(this.log, this, existingAccessory);
+            } else if(device.type && device.type.toLowerCase() === 'powerplug'){
+              new P110Accessory(this.log, this, existingAccessory);
             } else{
               new P100Accessory(this.log, this, existingAccessory);
             }
@@ -121,6 +126,8 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
             new L530Accessory(this.log, this, accessory);
           } else if(device.type && device.type.toLowerCase() === 'light'){
             new L510EAccessory(this.log, this, accessory);
+          } else if(device.type && device.type.toLowerCase() === 'powerplug'){
+            new P110Accessory(this.log, this, accessory);
           } else{
             new P100Accessory(this.log, this, accessory);
           }

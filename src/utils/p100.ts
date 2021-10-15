@@ -2,6 +2,8 @@ import { Logger } from 'homebridge';
 import { PlugSysinfo } from '../homekit-device/types';
 import TpLinkCipher from './tpLinkCipher';
 import { v4 as uuidv4 } from 'uuid';
+import { privateEncrypt } from 'crypto';
+import { error } from 'console';
 
 export default class P100 {
 
@@ -15,7 +17,7 @@ export default class P100 {
     protected ip:string;
     protected cookie!:string;
     protected token!:string;
-    private terminalUUID:string;
+    protected terminalUUID:string;
     private _plugSysInfo!:PlugSysinfo;
 
     protected tpLinkCipher!:TpLinkCipher;
@@ -191,7 +193,7 @@ export default class P100 {
       this.tpLinkCipher = new TpLinkCipher(this.log, b_arr, b_arr2);
     }
 
-    async turnOff():Promise<true>{
+    async turnOff():Promise<boolean>{
       const payload = '{'+
             '"method": "set_device_info",'+
             '"params": {'+
@@ -200,10 +202,10 @@ export default class P100 {
                 '"terminalUUID": "' + this.terminalUUID + '",' +
                 '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                 '};';
-      return this.handleRequest(payload);
+      return this.sendRequest(payload);
     }
 
-    async turnOn():Promise<true>{        
+    async turnOn():Promise<boolean>{        
       const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
@@ -213,10 +215,10 @@ export default class P100 {
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
        
-      return this.handleRequest(payload);
+      return this.sendRequest(payload);
     }
 
-    async setPowerState(state:boolean): Promise<true>{
+    async setPowerState(state:boolean): Promise<boolean>{
       if(state){
         return this.turnOn();
       } else{
@@ -259,6 +261,12 @@ export default class P100 {
         return this.axios.post(URL, securePassthroughPayload, config)
           .then((res) => {
             if(res.data.error_code){
+              if(res.data.error_code === '9999' || res.data.error_code === 9999){
+                this.log.debug('Trying to reconnect...');
+                return this.reconnect().then(()=>{
+                  return this.getDeviceInfo();
+                });
+              }
               return this.handleError(res.data.error_code, '326');
             }
                     
@@ -280,8 +288,7 @@ export default class P100 {
             this.log.error('371 Error: ' + error.message);
             return new Error(error);
           });
-      }
-      else{
+      } else{
         return new Promise<PlugSysinfo>((resolve, reject) => {
           reject();
         });
@@ -351,7 +358,23 @@ export default class P100 {
       return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
     }
 
-    protected handleRequest(payload:string):Promise<true>{
+    protected async sendRequest(payload:string):Promise<any>{
+      return this.handleRequest(payload).then(()=>{
+        return true;
+      }).catch((error)=>{
+        this.log.debug(error);
+        if(error.message.indexOf('9999') > 0){
+          return this.reconnect().then(()=>{
+            return this.handleRequest(payload).then(()=>{
+              return true;
+            });
+          });
+        }
+        return false;
+      });
+    }
+
+    protected handleRequest(payload:string):Promise<any>{
       const URL = 'http://' + this.ip + '/app?token=' + this.token;
         
       const headers = {
@@ -379,7 +402,6 @@ export default class P100 {
             if(res.data.error_code){
               if(res.data.error_code === '9999' || res.data.error_code === 9999){
                 this.log.debug('Trying to reconnect...');
-                return this.reconnect();
               }
               return this.handleError(res.data.error_code, '357');
             }
@@ -387,10 +409,11 @@ export default class P100 {
             const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
             try{
               const response = JSON.parse(decryptedResponse);
+              this.log.debug(response);
               if(response.error_code !== 0){
                 return this.handleError(response.error_code, '364');
               }
-              return true;
+              return response;
             } catch (error){
               return this.handleError(JSON.parse(decryptedResponse).error_code, '368');
             }
@@ -405,10 +428,10 @@ export default class P100 {
       });
     }
 
-    private async reconnect():Promise<void>{
+    protected async reconnect():Promise<void>{
       return this.handshake().then(() => {
         this.login().then(() => {
-          this.getDeviceInfo();
+          return;
         });
       });
     }

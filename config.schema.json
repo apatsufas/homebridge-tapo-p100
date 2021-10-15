@@ -29,7 +29,7 @@
       "devices": {
         "title": "Devices",
         "type": "array", 
-        "description": "The ip adrresses and the names for your P100 Plugs",
+        "description": "The ip adrresses and the names for your Tapo Devices",
         "items":{
           "title": "Device",
           "type": "object", 
@@ -51,11 +51,12 @@
             ]
             },
             "type": {
-              "title": "Colorlight, Light or Plug",
+              "title": "Colorlight, Light, Plug (with Power monitoring, use for P110) or Plug",
               "type": "string",
               "default": "plug",
               "oneOf": [
                 { "title": "Plug", "enum": ["Plug"] },
+                { "title": "Plug (with Power monitoring)", "enum": ["PowerPlug"] },
                 { "title": "Light", "enum": ["Light"] },
                 { "title": "Colorlight", "enum": ["Colorlight"] }
               ],

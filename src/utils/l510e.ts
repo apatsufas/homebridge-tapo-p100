@@ -31,7 +31,7 @@ export default class L510E extends P100 {
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
 
-    return this.handleRequest(payload);
+    return this.sendRequest(payload);
   }
 
   protected setSysInfo(sysInfo:LightSysinfo){

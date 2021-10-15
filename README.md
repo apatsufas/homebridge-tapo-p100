@@ -8,7 +8,7 @@
 
 # Homebridge Tapo Platform Plugin
 
-This is a Homebridge platform plugin for the TP-Link Tapo P100, P105 Plugs and L510E, L530 Lightbulbs.
+This is a Homebridge platform plugin for the TP-Link Tapo P100, P105, P110 Plugs and L510E, L530 Lightbulbs.
 
 Tested with:
 
@@ -32,7 +32,7 @@ The available fields in the config.json file are:
  - `devices`: [required] An array of devices
  - `name`: [required] The name of each device
  - `host`: [required] The host (ip) of each device 
- - `type`: [optional] Plug, Light or Colorlight. Use Plug for P100, Light for L510E and Colorlight for L530. If not provided default is Plug.
+ - `type`: [optional] Plug, Plug (with Power monitoring), Light or Colorlight. Use Plug for P100 or P105, Plug (with Power monitoring) for P110, Light for L510E and Colorlight for L530. If not provided default is Plug.
 
 Example:
 

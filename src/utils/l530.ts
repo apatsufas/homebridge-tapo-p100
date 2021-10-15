@@ -1,6 +1,7 @@
 import { Logger } from 'homebridge';
 import { ColorLightSysinfo } from '../homekit-device/types';
 import L510E from './l510e';
+import { PowerUsage } from './powerUsage';
 
 export default class L530 extends L510E {
 
@@ -37,10 +38,12 @@ export default class L530 extends L510E {
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
 
-    return this.handleRequest(payload);
+    return this.handleRequest(payload).then(()=>{
+      return true;
+    });
   }
 
-  async setColor(hue:number, saturation:number):Promise<true>{
+  async setColor(hue:number, saturation:number):Promise<boolean>{
     if(!hue){
       hue = 0;
     }
@@ -56,7 +59,7 @@ export default class L530 extends L510E {
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
 
-    return this.handleRequest(payload);
+    return this.sendRequest(payload);
   }
 
   protected setSysInfo(sysInfo:ColorLightSysinfo){
@@ -79,4 +82,13 @@ export default class L530 extends L510E {
     });
   }
 
+  async getEnergyUsage():Promise<PowerUsage>{        
+    const payload = '{'+
+                '"method": "get_device_usage",'+
+                    '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
+                    '};';
+    return this.handleRequest(payload).then((response)=>{
+      return response.result;
+    });
+  }
 }
