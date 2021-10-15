@@ -99,7 +99,7 @@ export class P110Accessory {
     this.p110.getEnergyUsage().then((response) => {
       this.platform.log.debug('Get Characteristic Power consumption ->', response.current_power);
 
-      if (this.fakeGatoHistoryService) {
+      if (this.fakeGatoHistoryService && response && response.current_power) {
         this.fakeGatoHistoryService.addEntry({
           time: new Date().getTime() / 1000,
           power: response.current_power,

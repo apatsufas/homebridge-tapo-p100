@@ -315,7 +315,7 @@ export class L530Accessory {
         this.lastMeasurement = response.power_usage.today;
       } else{
         this.platform.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
-        if (this.fakeGatoHistoryService) {
+        if (this.fakeGatoHistoryService && response && response.power_usage) {
           this.fakeGatoHistoryService.addEntry({
             time: new Date().getTime() / 1000,
             power: response.power_usage.today - this.lastMeasurement, //this.power
