@@ -74,15 +74,14 @@ export class L530Accessory {
             .on('get', this.getSaturation.bind(this));               // GET - bind to the `getSaturation` method below
 
           // Setup the adaptive lighting controller if available
-          if (
-            this.platform.api.versionGreaterOrEqual &&
-          this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')
-          ) {
+          if (this.platform.api.versionGreaterOrEqual && this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')) {
             this.adaptiveLightingController = new platform.api.hap.AdaptiveLightingController(
               this.service,
             );
             this.accessory.configureController(this.adaptiveLightingController);
           }
+
+          this.updateConsumption();
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
