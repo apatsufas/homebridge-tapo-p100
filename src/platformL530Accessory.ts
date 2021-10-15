@@ -97,6 +97,7 @@ export class L530Accessory {
     
     // get the Outlet service if it exists, otherwise create a new Outlet service
     this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
+    this.accessory.addService(this.fakeGatoHistoryService);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -112,6 +113,12 @@ export class L530Accessory {
       this.platform.log.debug('Set Characteristic On ->', value);
       this.l530.getSysInfo().device_on = value as boolean;
 
+      if (this.fakeGatoHistoryService) {
+        this.fakeGatoHistoryService.addEntry({
+          time: new Date().getTime() / 1000,
+          status: + value, 
+        });
+      }
       // you must call the callback function
       callback(null);
     });
@@ -128,6 +135,13 @@ export class L530Accessory {
       const isOn = response.device_on;
 
       this.platform.log.debug('Get Characteristic On ->', isOn);
+
+      if (this.fakeGatoHistoryService) {
+        this.fakeGatoHistoryService.addEntry({
+          time: new Date().getTime() / 1000,
+          status: + isOn, 
+        });
+      }
 
       // you must call the callback function
       // the first argument should be null if there were no errors
@@ -318,7 +332,7 @@ export class L530Accessory {
         if (this.fakeGatoHistoryService && response && response.power_usage) {
           this.fakeGatoHistoryService.addEntry({
             time: new Date().getTime() / 1000,
-            power: response.power_usage.today - this.lastMeasurement, //this.power
+            power: response.power_usage.today - this.lastMeasurement, 
           });
         }
       }
