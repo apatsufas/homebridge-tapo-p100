@@ -1,7 +1,7 @@
 import { Logger } from 'homebridge';
 import { EnergyUsage } from './energyUsage';
 import P100 from './p100';
-import {ConsumptionInfo} from "../homekit-device/types";
+import {ConsumptionInfo} from '../homekit-device/types';
 
 export default class P110 extends P100 {
 
@@ -26,8 +26,8 @@ export default class P110 extends P100 {
     return this.handleRequest(payload).then((response)=>{
       this._consumption = {
         total: this._consumption ? this._consumption.total + response.result.current_power : response.result.current_power,
-        current: response.result.current_power
-      }
+        current: response.result.current_power,
+      };
       return response.result;
     });
   }

@@ -74,10 +74,10 @@ export class L530Accessory {
             .on('get', this.getSaturation.bind(this));               // GET - bind to the `getSaturation` method below
 
           this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
-              .on('get', this.getCurrentConsumption.bind(this));
+            .on('get', this.getCurrentConsumption.bind(this));
 
           this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
-              .on('get', this.getTotalConsumption.bind(this));
+            .on('get', this.getTotalConsumption.bind(this));
 
           // Setup the adaptive lighting controller if available
           if (this.platform.api.versionGreaterOrEqual && this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')) {

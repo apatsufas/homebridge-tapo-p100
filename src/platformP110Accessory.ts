@@ -44,10 +44,10 @@ export class P110Accessory {
             .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
           this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
-              .on('get', this.getCurrentConsumption.bind(this));
+            .on('get', this.getCurrentConsumption.bind(this));
 
           this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
-              .on('get', this.getTotalConsumption.bind(this));
+            .on('get', this.getTotalConsumption.bind(this));
 
           this.updateConsumption();
         }).catch(() => {

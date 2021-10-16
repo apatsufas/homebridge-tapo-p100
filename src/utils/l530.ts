@@ -91,8 +91,8 @@ export default class L530 extends L510E {
     return this.handleRequest(payload).then((response)=>{
       this._consumption = {
         total: response.result.power_usage.today,
-        current: (response.result.power_usage.today / 1000) / 60
-      }
+        current: (response.result.power_usage.today / 1000) / 60,
+      };
 
       return response.result;
     });
