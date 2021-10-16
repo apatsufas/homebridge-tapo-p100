@@ -97,6 +97,15 @@ export default class L530 extends L510E {
       }
       
       return response.result;
+    }).catch((error)=>{
+      if(error.message.indexOf('9999') > 0){
+        return this.reconnect().then(()=>{
+          return this.handleRequest(payload).then(()=>{
+            return true;
+          });
+        });
+      }
+      return false;
     });
   }
 

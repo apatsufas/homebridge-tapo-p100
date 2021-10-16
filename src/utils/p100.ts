@@ -362,7 +362,6 @@ export default class P100 {
       return this.handleRequest(payload).then(()=>{
         return true;
       }).catch((error)=>{
-        this.log.debug(error);
         if(error.message.indexOf('9999') > 0){
           return this.reconnect().then(()=>{
             return this.handleRequest(payload).then(()=>{
