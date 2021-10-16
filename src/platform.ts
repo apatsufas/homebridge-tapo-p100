@@ -1,4 +1,13 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
+import {
+  API,
+  DynamicPlatformPlugin,
+  Logger,
+  PlatformAccessory,
+  PlatformConfig,
+  Service,
+  Characteristic,
+  WithUUID
+} from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { P100Accessory } from './platformP100Accessory';
@@ -7,6 +16,7 @@ import { L510EAccessory } from './platformL510EAccessory';
 import { L530Accessory } from './platformL530Accessory';
 import fakegato from 'fakegato-history';
 import { P110Accessory } from './platformP110Accessory';
+import Characteristics from './custom-characteristics';
 
 /**
  * TapoPlatform
@@ -23,6 +33,10 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
 
   public readonly config: TapoConfig;
 
+  public customCharacteristics: {
+    [key: string]: WithUUID<new () => Characteristic>;
+  };
+
   constructor(
     public readonly log: Logger,
     config: PlatformConfig,
@@ -32,6 +46,7 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
     this.config = parseConfig(config);
     this.log.debug('config: %j', this.config);
     this.log.debug('Finished initializing platform:', this.config.name);
+    this.customCharacteristics = Characteristics(api.hap.Characteristic);
     this.FakeGatoHistoryService = fakegato(this.api);
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,

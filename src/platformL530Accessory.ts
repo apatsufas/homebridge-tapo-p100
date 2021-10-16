@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
-  AdaptiveLightingController } from 'homebridge';
+  AdaptiveLightingController} from 'homebridge';
 import TapoPlatform from './platform';
 import L530 from './utils/l530';
 
@@ -12,7 +12,7 @@ export class L530Accessory {
   private service: Service;
   private adaptiveLightingController!: AdaptiveLightingController;
   private l530: L530;
-  private fakeGatoHistoryService?;
+  private readonly fakeGatoHistoryService?;
   private lastMeasurement: number | null = null;
 
   constructor(
@@ -72,6 +72,12 @@ export class L530Accessory {
           this.service.getCharacteristic(this.platform.Characteristic.Saturation)
             .on('set', this.setSaturation.bind(this))                // SET - bind to the `setSaturation` method below
             .on('get', this.getSaturation.bind(this));               // GET - bind to the `getSaturation` method below
+
+          this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
+              .on('get', this.getCurrentConsumption.bind(this));
+
+          this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
+              .on('get', this.getTotalConsumption.bind(this));
 
           // Setup the adaptive lighting controller if available
           if (this.platform.api.versionGreaterOrEqual && this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')) {
@@ -306,22 +312,9 @@ export class L530Accessory {
     });
   }
 
-  async updateConsumption(){
+  private updateConsumption(){
     this.l530.getEnergyUsage().then((response) => {
       if(this.lastMeasurement === null){
-        const now = new Date();
-        if(response.time_usage.today > 0){
-          let time = response.time_usage.today;
-          const power = response.power_usage.today / time;
-          while(time > 0){
-            now.setHours(now.getHours()-1, 0, 0, 0);
-            this.fakeGatoHistoryService.addEntry({
-              time: now.getTime() / 1000,
-              power: power,
-            });
-            time--;
-          }
-        }
         this.lastMeasurement = response.power_usage.today;
       } else{
         this.platform.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
@@ -337,5 +330,35 @@ export class L530Accessory {
     setTimeout(()=>{
       this.updateConsumption();
     }, 300000);
+  }
+
+  /**
+   * Handle the "GET" requests from HomeKit
+   * These are sent when HomeKit wants to know the current state of the accessory.
+   *
+   */
+  getCurrentConsumption(callback: CharacteristicGetCallback) {
+    const consumption = this.l530.getPowerConsumption();
+
+    // you must call the callback function
+    // the first argument should be null if there were no errors
+    // the second argument should be the value to return
+    // you must call the callback function
+    callback(null, consumption.current);
+  }
+
+  /**
+   * Handle the "GET" requests from HomeKit
+   * These are sent when HomeKit wants to know the current state of the accessory.
+   *
+   */
+  getTotalConsumption(callback: CharacteristicGetCallback) {
+    const consumption = this.l530.getPowerConsumption();
+
+    // you must call the callback function
+    // the first argument should be null if there were no errors
+    // the second argument should be the value to return
+    // you must call the callback function
+    callback(null, consumption.total);
   }
 }

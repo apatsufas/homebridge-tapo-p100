@@ -1,11 +1,12 @@
 import { Logger } from 'homebridge';
-import { ColorLightSysinfo } from '../homekit-device/types';
+import {ColorLightSysinfo, ConsumptionInfo} from '../homekit-device/types';
 import L510E from './l510e';
 import { PowerUsage } from './powerUsage';
 
 export default class L530 extends L510E {
 
   private _colorLightSysInfo!:ColorLightSysinfo;
+  private _consumption!:ConsumptionInfo;
 
   constructor(
         public readonly log: Logger,
@@ -88,7 +89,16 @@ export default class L530 extends L510E {
                     '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                     '};';
     return this.handleRequest(payload).then((response)=>{
+      this._consumption = {
+        total: response.result.power_usage.today,
+        current: (response.result.power_usage.today / 1000) / 60
+      }
+
       return response.result;
     });
+  }
+
+  public getPowerConsumption():ConsumptionInfo{
+    return this._consumption;
   }
 }

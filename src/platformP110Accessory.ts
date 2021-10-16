@@ -9,7 +9,7 @@ import P110 from './utils/p110';
  */
 export class P110Accessory {
   private service: Service;
-  private fakeGatoHistoryService?;
+  private readonly fakeGatoHistoryService?;
   private p110: P110;
 
   constructor(
@@ -42,6 +42,12 @@ export class P110Accessory {
           this.service.getCharacteristic(this.platform.Characteristic.On)
             .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
             .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+
+          this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
+              .on('get', this.getCurrentConsumption.bind(this));
+
+          this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
+              .on('get', this.getTotalConsumption.bind(this));
 
           this.updateConsumption();
         }).catch(() => {
@@ -95,10 +101,9 @@ export class P110Accessory {
     });
   }
 
-  async updateConsumption(){
+  private updateConsumption(){
     this.p110.getEnergyUsage().then((response) => {
       this.platform.log.debug('Get Characteristic Power consumption ->', response.current_power);
-
       if (this.fakeGatoHistoryService && response && response.current_power) {
         this.fakeGatoHistoryService.addEntry({
           time: new Date().getTime() / 1000,
@@ -110,5 +115,35 @@ export class P110Accessory {
     setTimeout(()=>{
       this.updateConsumption();
     }, 300000);
+  }
+
+  /**
+   * Handle the "GET" requests from HomeKit
+   * These are sent when HomeKit wants to know the current state of the accessory.
+   *
+   */
+  getCurrentConsumption(callback: CharacteristicGetCallback) {
+    const consumption = this.p110.getPowerConsumption();
+
+    // you must call the callback function
+    // the first argument should be null if there were no errors
+    // the second argument should be the value to return
+    // you must call the callback function
+    callback(null, consumption.current);
+  }
+
+  /**
+   * Handle the "GET" requests from HomeKit
+   * These are sent when HomeKit wants to know the current state of the accessory.
+   *
+   */
+  getTotalConsumption(callback: CharacteristicGetCallback) {
+    const consumption = this.p110.getPowerConsumption();
+
+    // you must call the callback function
+    // the first argument should be null if there were no errors
+    // the second argument should be the value to return
+    // you must call the callback function
+    callback(null, consumption.total);
   }
 }

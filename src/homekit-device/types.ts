@@ -24,3 +24,8 @@ export type ColorLightSysinfo = LightSysinfo &{
     hue: number;
     saturation: number;
   };
+
+export type ConsumptionInfo = {
+    total: number;
+    current: number;
+};

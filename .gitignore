@@ -122,3 +122,8 @@ dist
 .DS_Store
 .vscode
 src/.DS_Store
+homebridge-tapo-p100.iml
+.idea/hotswap_agent.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
