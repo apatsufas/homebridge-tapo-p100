@@ -314,9 +314,7 @@ export class L530Accessory {
 
   private updateConsumption(){
     this.l530.getEnergyUsage().then((response) => {
-      if(this.lastMeasurement === null){
-        this.lastMeasurement = response.power_usage.today;
-      } else{
+      if(this.lastMeasurement){
         this.platform.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
         if (this.fakeGatoHistoryService && response && response.power_usage) {
           this.fakeGatoHistoryService.addEntry({
@@ -325,6 +323,7 @@ export class L530Accessory {
           });
         }
       }
+      this.lastMeasurement = response.power_usage.today;
     });
 
     setTimeout(()=>{

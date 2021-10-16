@@ -89,11 +89,13 @@ export default class L530 extends L510E {
                     '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                     '};';
     return this.handleRequest(payload).then((response)=>{
-      this._consumption = {
-        total: response.result.power_usage.today,
-        current: (response.result.power_usage.today / 1000) / 60,
-      };
-
+      if(response && response.result){
+        this._consumption = {
+          total: response.result.power_usage.today / 1000,
+          current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+        };
+      }
+      
       return response.result;
     });
   }

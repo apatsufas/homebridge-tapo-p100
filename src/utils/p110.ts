@@ -24,10 +24,13 @@ export default class P110 extends P100 {
         '};';
      
     return this.handleRequest(payload).then((response)=>{
-      this._consumption = {
-        total: this._consumption ? this._consumption.total + response.result.current_power : response.result.current_power,
-        current: response.result.current_power,
-      };
+      if(response && response.result){
+        this._consumption = {
+          total: this._consumption ? this._consumption.total + response.result.current_power : response.result.current_power,
+          current: response.result.current_power,
+        };
+      }
+     
       return response.result;
     });
   }
