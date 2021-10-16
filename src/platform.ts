@@ -6,7 +6,7 @@ import {
   PlatformConfig,
   Service,
   Characteristic,
-  WithUUID
+  WithUUID,
 } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
