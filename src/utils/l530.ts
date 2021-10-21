@@ -94,6 +94,11 @@ export default class L530 extends L510E {
           total: response.result.power_usage.today / 1000,
           current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
         };
+      } else{
+        this._consumption = {
+          total: 0,
+          current: 0,
+        };
       }
       
       return response.result;

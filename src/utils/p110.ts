@@ -29,6 +29,11 @@ export default class P110 extends P100 {
           total: this._consumption ? this._consumption.total + response.result.current_power : response.result.current_power,
           current: response.result.current_power,
         };
+      } else{
+        this._consumption = {
+          total: 0,
+          current: 0,
+        };
       }
      
       return response.result;

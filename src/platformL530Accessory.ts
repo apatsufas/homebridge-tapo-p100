@@ -320,7 +320,8 @@ export class L530Accessory {
           if (this.fakeGatoHistoryService ) {
             this.fakeGatoHistoryService.addEntry({
               time: new Date().getTime() / 1000,
-              power: response.power_usage.today - this.lastMeasurement, 
+              power: response.power_usage.today > 0 ? response.power_usage.today - this.lastMeasurement > 0 ? 
+                response.power_usage.today - this.lastMeasurement : 0 : 0, 
             });
           }
         }
