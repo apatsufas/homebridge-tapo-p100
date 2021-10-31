@@ -79,7 +79,7 @@ export default class L530 extends L510E {
   async getColorTemp(): Promise<number>{
     return super.getDeviceInfo().then(() => {
       const newValue = this.transformColorTemp(this.getSysInfo().color_temp);
-      return newValue > 370 ? 370 : (newValue < 154 ? 154 : newValue);
+      return newValue > 400 ? 400 : (newValue < 154 ? 154 : newValue);
     });
   }
 
