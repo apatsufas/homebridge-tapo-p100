@@ -16,6 +16,10 @@ export default class L530 extends L510E {
   ) {
     super(log, ipAddress, email, password);
     this.log.debug('Constructing L530 on host: ' + ipAddress);
+    this._consumption = {
+      total: 0,
+      current: 0,
+    };
   }
 
   async getDeviceInfo(): Promise<ColorLightSysinfo>{
