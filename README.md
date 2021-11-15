@@ -108,6 +108,8 @@ This plugin will also allow you to control the Tapo Plugs and Lights even if you
 
 I created the plugin for personal use and wanted to share it with other people too.
 
+Maybe you would consider buying me a [coffee](https://www.paypal.me/AZimnas)
+
 ### Thanks / Credits
 
 Ported from the Python library https://github.com/fishbigger/TapoP100 (by @fishbigger) to Nodejs.
