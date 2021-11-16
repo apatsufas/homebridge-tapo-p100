@@ -15,7 +15,7 @@ Following features are supported per Device:
 - P100 : Turn On, Turn Off, Current State.
 - P110 : Same as P100 + Power Consumption in Eve App.
 - L510E: Same as P100 + Brightness control
-- L530E: Same L510# + Hue and Saturation control, Adaptive Lighting support and Power Consumption in Eve App.
+- L530E: Same as L510E + Hue and Saturation control, Adaptive Lighting support and Power Consumption in Eve App.
 
 Tested with:
 
