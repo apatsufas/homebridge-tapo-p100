@@ -26,8 +26,9 @@ export default class P110 extends P100 {
     return this.handleRequest(payload).then((response)=>{
       if(response && response.result){
         this._consumption = {
-          total: this._consumption ? this._consumption.total + response.result.current_power : response.result.current_power,
-          current: response.result.current_power,
+          total: this._consumption ? this._consumption.total + (response.result.current_power / 1000) : 
+            response.result.current_power / 1000,
+          current: response.result.current_power / 1000,
         };
       } else{
         this._consumption = {
