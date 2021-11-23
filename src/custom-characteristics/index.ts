@@ -1,6 +1,6 @@
 import type {
-    Characteristic as CharacteristicClass,
-    WithUUID,
+  Characteristic as CharacteristicClass,
+  WithUUID,
 } from 'homebridge';
 
 import DefaultCharacteristicImport from './default-characteristic';
@@ -8,16 +8,16 @@ import CurrentConsumptionCharacteristicImport from './currentConsumptionCharacte
 import TotalConsumptionCharacteristicImport from './totalConsumptionCharacteristic';
 
 export default function characteristic(
-    Characteristic: typeof CharacteristicClass
+  Characteristic: typeof CharacteristicClass,
 ): Record<
     | 'CurrentConsumptionCharacteristic'
     | 'TotalConsumptionCharacteristic',
     WithUUID<new () => CharacteristicClass>
     > {
-    const DefaultCharacteristic = DefaultCharacteristicImport(Characteristic);
+  const DefaultCharacteristic = DefaultCharacteristicImport(Characteristic);
 
-    return {
-        CurrentConsumptionCharacteristic: CurrentConsumptionCharacteristicImport(DefaultCharacteristic),
-        TotalConsumptionCharacteristic: TotalConsumptionCharacteristicImport(DefaultCharacteristic),
-    };
+  return {
+    CurrentConsumptionCharacteristic: CurrentConsumptionCharacteristicImport(DefaultCharacteristic),
+    TotalConsumptionCharacteristic: TotalConsumptionCharacteristicImport(DefaultCharacteristic),
+  };
 }

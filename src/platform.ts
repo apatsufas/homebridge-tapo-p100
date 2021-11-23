@@ -7,6 +7,7 @@ import {
   Service,
   Characteristic,
   WithUUID,
+  Categories,
 } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
@@ -128,22 +129,37 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
           // the accessory does not yet exist, so we need to create it
           this.log.info('Adding new accessory:', device.host);
 
-          // create a new accessory
-          const accessory = new this.api.platformAccessory(device.host, uuid);
-
-          // store a copy of the device object in the `accessory.context`
-          // the `context` property can be used to store any data about the accessory you may need
-          accessory.context.device = device;
+          let accessory:PlatformAccessory;
 
           // create the accessory handler for the newly create accessory
           // this is imported from `platformAccessory.ts`
           if(device.type && device.type.toLowerCase() === 'colorlight'){
+            // create a new accessory
+            accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.LIGHTBULB);
+            // store a copy of the device object in the `accessory.context`
+            // the `context` property can be used to store any data about the accessory you may need
+            accessory.context.device = device;
             new L530Accessory(this.log, this, accessory);
           } else if(device.type && device.type.toLowerCase() === 'light'){
+            // create a new accessory
+            accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.LIGHTBULB);
+            // store a copy of the device object in the `accessory.context`
+            // the `context` property can be used to store any data about the accessory you may need
+            accessory.context.device = device;
             new L510EAccessory(this.log, this, accessory);
           } else if(device.type && device.type.toLowerCase() === 'powerplug'){
+            // create a new accessory
+            accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.OUTLET);
+            // store a copy of the device object in the `accessory.context`
+            // the `context` property can be used to store any data about the accessory you may need
+            accessory.context.device = device;
             new P110Accessory(this.log, this, accessory);
           } else{
+            // create a new accessory
+            accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.OUTLET);
+            // store a copy of the device object in the `accessory.context`
+            // the `context` property can be used to store any data about the accessory you may need
+            accessory.context.device = device;
             new P100Accessory(this.log, this, accessory);
           }
 
