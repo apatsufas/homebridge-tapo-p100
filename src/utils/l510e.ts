@@ -22,7 +22,7 @@ export default class L510E extends P100 {
     });
   }
 
-  async setBrightness(brightness:number):Promise<true>{
+  async setBrightness(brightness:number):Promise<boolean>{
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+

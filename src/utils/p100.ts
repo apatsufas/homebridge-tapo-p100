@@ -2,6 +2,7 @@ import { Logger } from 'homebridge';
 import { PlugSysinfo } from '../homekit-device/types';
 import TpLinkCipher from './tpLinkCipher';
 import { v4 as uuidv4 } from 'uuid';
+import { AxiosResponse } from 'axios';
 
 export default class P100 {
 
@@ -139,7 +140,7 @@ export default class P100 {
       };
 
       await this.axios.post(URL, payload, config)
-        .then((res:any) => {
+        .then((res:AxiosResponse) => {
           this.log.debug('Received Handshake P100 on host response: ' + this.ip);
 
           if(res.data.error_code){
@@ -155,9 +156,9 @@ export default class P100 {
             return this.handleError(res.data.error_code, '106');
           }
         })
-        .catch((error: any) => {
+        .catch((error: Error) => {
           this.log.error('111 Error: ' + error.message);
-          return new Error(error);
+          return error;
         });
     }
 
@@ -193,7 +194,7 @@ export default class P100 {
         };
   
         await this.axios.post(URL, securePassthroughPayload, config)
-          .then((res:any) => {
+          .then((res:AxiosResponse) => {
             if(res.data.error_code){
               return this.handleError(res.data.error_code, '146');
             }
@@ -209,9 +210,9 @@ export default class P100 {
               return this.handleError(JSON.parse(decryptedResponse).error_code, '157');
             }
           })
-          .catch((error: any) => {
+          .catch((error: Error) => {
             this.log.error('Error: ' + error.message);
-            return new Error(error);
+            return error;
           });
       }
     }
@@ -324,9 +325,9 @@ export default class P100 {
               return this.handleError(JSON.parse(decryptedResponse).error_code, '340');
             }
           })
-          .catch((error:any) => {
+          .catch((error:Error) => {
             this.log.error('371 Error: ' + error.message);
-            return new Error(error);
+            return error;
           });
       } else{
         return new Promise<PlugSysinfo>((resolve, reject) => {
@@ -394,11 +395,11 @@ export default class P100 {
 
     protected handleError(errorCode:string, line:string):Error{
       const errorMessage = this.ERROR_CODES[errorCode];
-      this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage);
+      this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
       return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
     }
 
-    protected async sendRequest(payload:string):Promise<any>{
+    protected async sendRequest(payload:string):Promise<boolean>{
       return this.handleRequest(payload).then(()=>{
         return true;
       }).catch((error)=>{
@@ -437,7 +438,7 @@ export default class P100 {
         };
             
         return this.axios.post(URL, securePassthroughPayload, config)
-          .then((res) => {
+          .then((res:AxiosResponse) => {
             if(res.data.error_code){
               if(res.data.error_code === '9999' || res.data.error_code === 9999){
                 this.log.error(' Error Code: ' + res.data.error_code + ', ' + this.ERROR_CODES[res.data.error_code]);
@@ -458,9 +459,9 @@ export default class P100 {
               return this.handleError(JSON.parse(decryptedResponse).error_code, '368');
             }
           })
-          .catch((error:any) => {
+          .catch((error:Error) => {
             this.log.error('372 Error: ' + error.message);
-            return new Error(error);
+            return error;
           });
       }
       return new Promise<true>((resolve, reject) => {
