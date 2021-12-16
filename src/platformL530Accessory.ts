@@ -376,7 +376,7 @@ export class L530Accessory {
         const isOn = response.device_on;
         const saturation = response.saturation;
         const hue = response.hue;
-        const color_temp = response;
+        const color_temp = response.color_temp;
         const brightness = response.brightness;
 
         this.platform.log.debug('Get Characteristic On ->', isOn);
