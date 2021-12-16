@@ -16,6 +16,7 @@ export class P100Accessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
     this.p100 = new P100(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
@@ -40,6 +41,11 @@ export class P100Accessory {
           // register handlers for the OutletInUse Characteristic
           this.service.getCharacteristic(this.platform.Characteristic.OutletInUse)
             .on('get', this.handleOutletInUseGet.bind(this));
+
+          const interval = updateInterval ? updateInterval : 30000;
+          setTimeout(()=>{
+            this.updateState(interval);
+          }, interval);
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
@@ -102,5 +108,21 @@ export class P100Accessory {
     const currentValue = 1;
 
     callback(null, currentValue);
+  }
+
+  private updateState(interval:number){
+    this.p100.getDeviceInfo().then((response) => {
+      if(response){
+        const isOn = response.device_on;
+
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+      }
+    });
+
+    setTimeout(()=>{
+      this.updateState(interval);
+    }, interval);
   }
 }

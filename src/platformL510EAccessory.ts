@@ -16,6 +16,7 @@ export class L510EAccessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
     this.l510e = new L510E(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
@@ -41,6 +42,11 @@ export class L510EAccessory {
           this.service.getCharacteristic(this.platform.Characteristic.Brightness)
             .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
             .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
+
+          const interval = updateInterval ? updateInterval : 30000;
+          setTimeout(()=>{
+            this.updateState(interval);
+          }, interval);
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
@@ -128,5 +134,26 @@ export class L510EAccessory {
       // you must call the callback function
       callback(null, brightness);
     });
+  }
+
+  private updateState(interval:number){
+    this.l510e.getDeviceInfo().then((response) => {
+      if(response){
+        const isOn = response.device_on;
+        const brightness = response.brightness;
+
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+
+        if(brightness){
+          this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
+        }
+      }
+    });
+
+    setTimeout(()=>{
+      this.updateState(interval);
+    }, interval);
   }
 }

@@ -19,6 +19,7 @@ export class L530Accessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
     this.l530 = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
@@ -88,6 +89,11 @@ export class L530Accessory {
           }
 
           this.updateConsumption();
+
+          const interval = updateInterval ? updateInterval : 30000;
+          setTimeout(()=>{
+            this.updateState(interval);
+          }, interval);
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
@@ -362,5 +368,38 @@ export class L530Accessory {
     // the second argument should be the value to return
     // you must call the callback function
     callback(null, consumption.total);
+  }
+
+  private updateState(interval:number){
+    this.l530.getDeviceInfo().then((response) => {
+      if(response){
+        const isOn = response.device_on;
+        const saturation = response.saturation;
+        const hue = response.hue;
+        const color_temp = response;
+        const brightness = response.brightness;
+
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+
+        if(saturation){
+          this.service.updateCharacteristic(this.platform.Characteristic.Saturation, saturation);
+        }
+        if(hue){
+          this.service.updateCharacteristic(this.platform.Characteristic.Hue, hue);
+        }
+        if(color_temp){
+          this.service.updateCharacteristic(this.platform.Characteristic.ColorTemperature, color_temp);
+        }
+        if(brightness){
+          this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
+        }
+      }
+    });
+
+    setTimeout(()=>{
+      this.updateState(interval);
+    }, interval);
   }
 }

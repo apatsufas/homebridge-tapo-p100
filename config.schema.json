@@ -61,6 +61,12 @@
                 { "title": "Colorlight", "enum": ["Colorlight"] }
               ],
               "required": false
+            },
+            "updateInterval":{
+              "title": "Interval in which the state of the Accessory should be updated (in seconds)",
+              "type" : "number",
+              "default": "30",
+              "required": false
             }
           }
         }

@@ -1,4 +1,5 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, 
+  Logger } from 'homebridge';
 import TapoPlatform from './platform';
 import P110 from './utils/p110';
 
@@ -16,6 +17,7 @@ export class P110Accessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
     this.p110 = new P110(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
@@ -50,6 +52,11 @@ export class P110Accessory {
             .on('get', this.getTotalConsumption.bind(this));
 
           this.updateConsumption();
+
+          const interval = updateInterval ? updateInterval : 30000;
+          setTimeout(()=>{
+            this.updateState(interval);
+          }, interval);
         }).catch(() => {
           this.log.error('Get Device Info failed');
         });
@@ -115,6 +122,22 @@ export class P110Accessory {
     setTimeout(()=>{
       this.updateConsumption();
     }, 300000);
+  }
+
+  private updateState(interval:number){
+    this.p110.getDeviceInfo().then((response) => {
+      if(response){
+        const isOn = response.device_on;
+
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+      }
+    });
+
+    setTimeout(()=>{
+      this.updateState(interval);
+    }, interval);
   }
 
   /**
