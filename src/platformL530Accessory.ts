@@ -390,7 +390,7 @@ export class L530Accessory {
           this.service.updateCharacteristic(this.platform.Characteristic.Hue, hue);
         }
         if(color_temp){
-          this.service.updateCharacteristic(this.platform.Characteristic.ColorTemperature, color_temp);
+          this.service.updateCharacteristic(this.platform.Characteristic.ColorTemperature, this.l530.calculateColorTemp(color_temp));
         }
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
