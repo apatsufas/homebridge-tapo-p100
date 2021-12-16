@@ -379,7 +379,7 @@ export class L530Accessory {
         const color_temp = response.color_temp;
         const brightness = response.brightness;
 
-        this.platform.log.debug('Get Characteristic On ->', isOn);
+        this.platform.log.debug('Get Device Info ->', JSON.stringify(response));
   
         this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
 
