@@ -90,17 +90,20 @@ export class L530Accessory {
 
           this.updateConsumption();
 
-          const interval = updateInterval ? updateInterval : 30000;
+          const interval = updateInterval ? updateInterval*1000 : 30000;
           setTimeout(()=>{
             this.updateState(interval);
           }, interval);
         }).catch(() => {
-          this.log.error('Get Device Info failed');
+          this.setNoResponse();
+          this.log.error('100 - Get Device Info failed');
         });
       }).catch(() => {
+        this.setNoResponse();
         this.log.error('Login failed');
       });
     }).catch(() => {
+      this.setNoResponse();
       this.log.error('Handshake failed');
     });
     
@@ -140,22 +143,30 @@ export class L530Accessory {
   getOn(callback: CharacteristicGetCallback) {
     // implement your own code to check if the device is on
     this.l530.getDeviceInfo().then((response) => {
-      const isOn = response.device_on;
+      if(response){
+        const isOn = response.device_on;
 
-      this.platform.log.debug('Get Characteristic On ->', isOn);
-
-      if (this.fakeGatoHistoryService) {
-        this.fakeGatoHistoryService.addEntry({
-          time: new Date().getTime() / 1000,
-          status: + isOn, 
-        });
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        if (this.fakeGatoHistoryService) {
+          this.fakeGatoHistoryService.addEntry({
+            time: new Date().getTime() / 1000,
+            status: + isOn, 
+          });
+        }
+  
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        if(isOn !== undefined){
+          callback(null, isOn);
+        } else{
+          this.setNoResponse();
+        }
+      } else{
+        this.setNoResponse();
       }
-
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, isOn);
     });
   }
 
@@ -381,7 +392,11 @@ export class L530Accessory {
 
         this.platform.log.debug('Get Device Info ->', JSON.stringify(response));
   
-        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+        if(isOn !== undefined){
+          this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+        } else{
+          this.setNoResponse();
+        }
 
         if(saturation){
           this.service.updateCharacteristic(this.platform.Characteristic.Saturation, saturation);
@@ -396,10 +411,17 @@ export class L530Accessory {
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
         }
       }
+    }).catch(()=>{
+      this.setNoResponse();
     });
 
     setTimeout(()=>{
       this.updateState(interval);
     }, interval);
+  }
+
+  private setNoResponse():void{
+    //@ts-ignore
+    this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }

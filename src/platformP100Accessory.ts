@@ -42,17 +42,22 @@ export class P100Accessory {
           this.service.getCharacteristic(this.platform.Characteristic.OutletInUse)
             .on('get', this.handleOutletInUseGet.bind(this));
 
-          const interval = updateInterval ? updateInterval : 30000;
+          const interval = updateInterval ? updateInterval*1000 : 30000;
+          this.log.debug('interval: ' + interval);
+
           setTimeout(()=>{
             this.updateState(interval);
           }, interval);
         }).catch(() => {
-          this.log.error('Get Device Info failed');
+          this.setNoResponse();
+          this.log.error('52 - Get Device Info failed');
         });
       }).catch(() => {
+        this.setNoResponse();
         this.log.error('Login failed');
       });
     }).catch(() => {
+      this.setNoResponse();
       this.log.error('Handshake failed');
     });
     
@@ -86,15 +91,23 @@ export class P100Accessory {
   getOn(callback: CharacteristicGetCallback) {
     // implement your own code to check if the device is on
     this.p100.getDeviceInfo().then((response) => {
-      const isOn = response.device_on;
+      if(response){
+        const isOn = response.device_on;
 
-      this.platform.log.debug('Get Characteristic On ->', isOn);
-
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, isOn);
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        if(isOn !== undefined){
+          callback(null, isOn);
+        } else{
+          this.setNoResponse();
+        }
+      } else{
+        this.setNoResponse();
+      }
     });
   }
 
@@ -111,18 +124,35 @@ export class P100Accessory {
   }
 
   private updateState(interval:number){
+    this.platform.log.debug('Updating state');
     this.p100.getDeviceInfo().then((response) => {
       if(response){
         const isOn = response.device_on;
 
         this.platform.log.debug('Get Characteristic On ->', isOn);
   
-        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+        if(isOn !== undefined){
+          this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+        } else{
+          this.platform.log.debug('On is undefined -> set no response');
+          this.setNoResponse();
+        }
+      } else{
+        this.platform.log.debug('Error');
+        this.setNoResponse();
       }
+    }).catch(()=>{
+      this.platform.log.debug('Error');
+      this.setNoResponse();
     });
 
     setTimeout(()=>{
       this.updateState(interval);
     }, interval);
+  }
+
+  private setNoResponse():void{
+    //@ts-ignore
+    this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }

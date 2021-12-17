@@ -43,17 +43,20 @@ export class L510EAccessory {
             .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
             .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
 
-          const interval = updateInterval ? updateInterval : 30000;
+          const interval = updateInterval ? updateInterval*1000 : 30000;
           setTimeout(()=>{
             this.updateState(interval);
           }, interval);
         }).catch(() => {
+          this.setNoResponse();
           this.log.error('Get Device Info failed');
         });
       }).catch(() => {
+        this.setNoResponse();
         this.log.error('Login failed');
       });
     }).catch(() => {
+      this.setNoResponse();
       this.log.error('Handshake failed');
     });
     
@@ -86,15 +89,23 @@ export class L510EAccessory {
   getOn(callback: CharacteristicGetCallback) {
     // implement your own code to check if the device is on
     this.l510e.getDeviceInfo().then((response) => {
-      const isOn = response.device_on;
+      if(response){
+        const isOn = response.device_on;
 
-      this.platform.log.debug('Get Characteristic On ->', isOn);
-
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, isOn);
+        this.platform.log.debug('Get Characteristic On ->', isOn);
+  
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        if(isOn !== undefined){
+          callback(null, isOn);
+        } else{
+          this.setNoResponse();
+        }
+      } else{
+        this.setNoResponse();
+      }
     });
   }
 
@@ -144,16 +155,27 @@ export class L510EAccessory {
 
         this.platform.log.debug('Get Characteristic On ->', isOn);
   
-        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+        if(isOn !== undefined){
+          this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+        } else{
+          this.setNoResponse();
+        }
 
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
         }
       }
+    }).catch(()=>{
+      this.setNoResponse();
     });
 
     setTimeout(()=>{
       this.updateState(interval);
     }, interval);
+  }
+
+  private setNoResponse():void{
+    //@ts-ignore
+    this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }

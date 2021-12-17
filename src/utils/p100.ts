@@ -3,6 +3,7 @@ import { PlugSysinfo } from '../homekit-device/types';
 import TpLinkCipher from './tpLinkCipher';
 import { v4 as uuidv4 } from 'uuid';
 import { AxiosResponse } from 'axios';
+import { rejects } from 'assert';
 
 export default class P100 {
 
@@ -18,6 +19,7 @@ export default class P100 {
     protected token!:string;
     protected terminalUUID:string;
     private _plugSysInfo!:PlugSysinfo;
+    private _reconnect_counter:number;
 
     protected tpLinkCipher!:TpLinkCipher;
 
@@ -83,6 +85,7 @@ export default class P100 {
       this.encryptCredentials(email, password);
       this.createKeyPair();
       this.terminalUUID = uuidv4();
+      this._reconnect_counter = 0;
     }
 
     private encryptCredentials(email : string, password: string){
@@ -272,7 +275,6 @@ export default class P100 {
           resolve(this.getSysInfo());
         });
       }
-
       const URL = 'http://' + this.ip + '/app?token=' + this.token;
           
       const payload = '{'+
@@ -301,7 +303,7 @@ export default class P100 {
         return this.axios.post(URL, securePassthroughPayload, config)
           .then((res) => {
             if(res.data.error_code){
-              if(res.data.error_code === '9999' || res.data.error_code === 9999){
+              if((res.data.error_code === '9999' || res.data.error_code === 9999) && this._reconnect_counter <= 3){
                 this.log.error(' Error Code: ' + res.data.error_code + ', ' + this.ERROR_CODES[res.data.error_code]);
                 this.log.debug('Trying to reconnect...');
                 return this.reconnect().then(()=>{
@@ -393,17 +395,17 @@ export default class P100 {
       return this._plugSysInfo;
     }
 
-    protected handleError(errorCode:string, line:string):Error{
+    protected handleError(errorCode:string, line:string):undefined{
       const errorMessage = this.ERROR_CODES[errorCode];
       this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
-      return new Error('Error Code: ' + errorCode + ', ' + errorMessage);
+      return undefined;
     }
 
     protected async sendRequest(payload:string):Promise<boolean>{
       return this.handleRequest(payload).then(()=>{
         return true;
       }).catch((error)=>{
-        if(error.message.indexOf('9999') > 0){
+        if(error.message.indexOf('9999') > 0 && this._reconnect_counter <=3){
           return this.reconnect().then(()=>{
             return this.handleRequest(payload).then(()=>{
               return true;
@@ -460,8 +462,7 @@ export default class P100 {
             }
           })
           .catch((error:Error) => {
-            this.log.error('372 Error: ' + error.message);
-            return error;
+            return this.handleError(error.message, '372');
           });
       }
       return new Promise<true>((resolve, reject) => {
@@ -470,6 +471,7 @@ export default class P100 {
     }
 
     protected async reconnect():Promise<void>{
+      this._reconnect_counter++;
       return this.handshake().then(() => {
         this.login().then(() => {
           return;
