@@ -396,20 +396,20 @@ export default class P100 {
       return this._plugSysInfo;
     }
 
-    protected handleError(errorCode:string, line:string):undefined{
+    protected handleError(errorCode:string, line:string):boolean{
       const errorMessage = this.ERROR_CODES[errorCode];
       this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
-      return undefined;
+      return false;
     }
 
     protected async sendRequest(payload:string):Promise<boolean>{
-      return this.handleRequest(payload).then(()=>{
-        return true;
+      return this.handleRequest(payload).then((result)=>{
+        return result ? true : false;
       }).catch((error)=>{
         if(error.message.indexOf('9999') > 0 && this._reconnect_counter <=3){
           return this.reconnect().then(()=>{
-            return this.handleRequest(payload).then(()=>{
-              return true;
+            return this.handleRequest(payload).then((result)=>{
+              return result ? true : false;
             });
           });
         }
