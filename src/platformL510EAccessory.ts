@@ -73,11 +73,15 @@ export class L510EAccessory {
    * These are sent when the user changes the state of an accessory.
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l510e.setPowerState(value as boolean).then(() => {
-      this.platform.log.debug('Set Characteristic On ->', value);
-      this.l510e.getSysInfo().device_on = value as boolean;
-      // you must call the callback function
-      callback(null);
+    this.l510e.setPowerState(value as boolean).then((result) => {
+      if(result){
+        this.platform.log.debug('Set Characteristic On ->', value);
+        this.l510e.getSysInfo().device_on = value as boolean;
+        // you must call the callback function
+        callback(null);
+      } else{
+        callback(new Error('unreachable'), false);
+      }
     });
   }
 
@@ -115,12 +119,16 @@ export class L510EAccessory {
    */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.l510e.getSysInfo().device_on){
-      this.l510e.setBrightness(value as number).then(() => {
-        this.platform.log.debug('Set Characteristic Brightness ->', value);
-        this.l510e.getSysInfo().brightness = value as number;
-
-        // you must call the callback function
-        callback(null);
+      this.l510e.setBrightness(value as number).then((result) => {
+        if(result){
+          this.platform.log.debug('Set Characteristic Brightness ->', value);
+          this.l510e.getSysInfo().brightness = value as number;
+  
+          // you must call the callback function
+          callback(null);
+        } else{
+          callback(new Error('unreachable'), false);
+        }
       });
     } else{
       callback(null);

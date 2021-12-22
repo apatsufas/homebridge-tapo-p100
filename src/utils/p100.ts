@@ -310,6 +310,7 @@ export default class P100 {
                   return this.getDeviceInfo();
                 });
               }
+              this._reconnect_counter = 0;
               return this.handleError(res.data.error_code, '326');
             }
                     
@@ -412,6 +413,7 @@ export default class P100 {
             });
           });
         }
+        this._reconnect_counter = 0;
         return false;
       });
     }
@@ -449,6 +451,7 @@ export default class P100 {
                   return this.getDeviceInfo();
                 });
               }
+              this._reconnect_counter = 0;
               return this.handleError(res.data.error_code, '357');
             }
                   

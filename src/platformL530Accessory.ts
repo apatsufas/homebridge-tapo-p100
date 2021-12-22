@@ -120,18 +120,22 @@ export class L530Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l530.setPowerState(value as boolean).then(() => {
-      this.platform.log.debug('Set Characteristic On ->', value);
-      this.l530.getSysInfo().device_on = value as boolean;
-
-      if (this.fakeGatoHistoryService) {
-        this.fakeGatoHistoryService.addEntry({
-          time: new Date().getTime() / 1000,
-          status: + value, 
-        });
+    this.l530.setPowerState(value as boolean).then((result) => {
+      if(result){
+        this.platform.log.debug('Set Characteristic On ->', value);
+        this.l530.getSysInfo().device_on = value as boolean;
+  
+        if (this.fakeGatoHistoryService) {
+          this.fakeGatoHistoryService.addEntry({
+            time: new Date().getTime() / 1000,
+            status: + value, 
+          });
+        }
+        // you must call the callback function
+        callback(null);
+      } else{
+        callback(new Error('unreachable'));
       }
-      // you must call the callback function
-      callback(null);
     });
   }
 
@@ -176,12 +180,16 @@ export class L530Accessory {
    */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.l530.getSysInfo().device_on){
-      this.l530.setBrightness(value as number).then(() => {
-        this.platform.log.debug('Set Characteristic Brightness ->', value);
-        this.l530.getSysInfo().brightness = value as number;
-
-        // you must call the callback function
-        callback(null);
+      this.l530.setBrightness(value as number).then((result) => {
+        if(result){
+          this.platform.log.debug('Set Characteristic Brightness ->', value);
+          this.l530.getSysInfo().brightness = value as number;
+  
+          // you must call the callback function
+          callback(null);
+        } else{
+          callback(new Error('unreachable'), false);
+        }
       });
     } else{
       callback(null);
@@ -221,12 +229,16 @@ export class L530Accessory {
   setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.log.debug('Color Temp Homekit :' + value);
     if(this.l530.getSysInfo().device_on){
-      this.l530.setColorTemp(value as number).then(() => {
-        this.l530.getSysInfo().color_temp = value as number;
-        this.platform.log.debug('Set Characteristic Color Temperature ->', value);
-  
-        // you must call the callback function
-        callback(null);
+      this.l530.setColorTemp(value as number).then((result) => {
+        if(result){
+          this.l530.getSysInfo().color_temp = value as number;
+          this.platform.log.debug('Set Characteristic Color Temperature ->', value);
+    
+          // you must call the callback function
+          callback(null);
+        } else{
+          callback(new Error('unreachable'), false);
+        }
       });
     } else{
       // you must call the callback function
@@ -263,13 +275,17 @@ export class L530Accessory {
    */
   setHue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.l530.getSysInfo().device_on){
-      this.l530.setColor(value as number, this.l530.getSysInfo().saturation).then(() => {
-        this.l530.getSysInfo().hue = value as number;
-        this.platform.log.debug('Set Characteristic Hue ->', value);
-        this.platform.log.debug('With Characteristic Saturation ->', this.l530.getSysInfo().saturation);
-
-        // you must call the callback function
-        callback(null);
+      this.l530.setColor(value as number, this.l530.getSysInfo().saturation).then((result) => {
+        if(result){
+          this.l530.getSysInfo().hue = value as number;
+          this.platform.log.debug('Set Characteristic Hue ->', value);
+          this.platform.log.debug('With Characteristic Saturation ->', this.l530.getSysInfo().saturation);
+  
+          // you must call the callback function
+          callback(null);
+        } else{
+          callback(new Error('unreachable'), false);
+        }
       });
     } else{
       callback(null);
@@ -308,13 +324,17 @@ export class L530Accessory {
    */
   setSaturation(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.l530.getSysInfo().device_on){
-      this.l530.setColor(this.l530.getSysInfo().hue, value as number).then(() => {
-        this.l530.getSysInfo().saturation = value as number;
-        this.platform.log.debug('Set Characteristic Saturation ->', value);
-        this.platform.log.debug('With Characteristic Hue ->', this.l530.getSysInfo().hue);
-
-        // you must call the callback function
-        callback(null);
+      this.l530.setColor(this.l530.getSysInfo().hue, value as number).then((result) => {
+        if(result){
+          this.l530.getSysInfo().saturation = value as number;
+          this.platform.log.debug('Set Characteristic Saturation ->', value);
+          this.platform.log.debug('With Characteristic Hue ->', this.l530.getSysInfo().hue);
+  
+          // you must call the callback function
+          callback(null);
+        } else{
+          callback(new Error('unreachable'), false);
+        }
       });
     } else{
       callback(null);
