@@ -111,10 +111,10 @@ export class P110Accessory {
         if(isOn !== undefined){
           callback(null, isOn);
         } else{
-          this.setNoResponse();
+          callback(new Error('unreachable'), isOn);
         }
       } else{
-        this.setNoResponse();
+        callback(new Error('unreachable'), false);
       }
     });
   }

@@ -101,10 +101,10 @@ export class L510EAccessory {
         if(isOn !== undefined){
           callback(null, isOn);
         } else{
-          this.setNoResponse();
+          callback(new Error('unreachable'), isOn);
         }
       } else{
-        this.setNoResponse();
+        callback(new Error('unreachable'), false);
       }
     });
   }
@@ -124,7 +124,6 @@ export class L510EAccessory {
       });
     } else{
       callback(null);
-
     }
   }
 
@@ -135,15 +134,23 @@ export class L510EAccessory {
    */
   getBrightness(callback: CharacteristicGetCallback) {
     this.l510e.getDeviceInfo().then((response) => {
-      const brightness = response.brightness;
+      if(response){
+        const brightness = response.brightness;
 
-      this.platform.log.debug('Get Characteristic Brightness ->', brightness);
-
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, brightness);
+        if(brightness !== undefined){
+          this.platform.log.debug('Get Characteristic Brightness ->', brightness);
+  
+          // you must call the callback function
+          // the first argument should be null if there were no errors
+          // the second argument should be the value to return
+          // you must call the callback function
+          callback(null, brightness);
+        } else{
+          callback(new Error('unreachable'), 0);
+        }
+      } else{
+        callback(new Error('unreachable'), 0);
+      }
     });
   }
 

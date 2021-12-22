@@ -162,10 +162,10 @@ export class L530Accessory {
         if(isOn !== undefined){
           callback(null, isOn);
         } else{
-          this.setNoResponse();
+          callback(new Error('unreachable'), isOn);
         }
       } else{
-        this.setNoResponse();
+        callback(new Error('unreachable'), false);
       }
     });
   }
@@ -195,15 +195,22 @@ export class L530Accessory {
    */
   getBrightness(callback: CharacteristicGetCallback) {
     this.l530.getDeviceInfo().then((response) => {
-      const brightness = response.brightness;
-
-      this.platform.log.debug('Get Characteristic Brightness ->', brightness);
-
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, brightness);
+      if(response){
+        const brightness = response.brightness;
+        if(brightness !== undefined){
+          this.platform.log.debug('Get Characteristic Brightness ->', brightness);
+  
+          // you must call the callback function
+          // the first argument should be null if there were no errors
+          // the second argument should be the value to return
+          // you must call the callback function
+          callback(null, brightness);
+        }else{
+          callback(new Error('unreachable'), 0);
+        }
+      } else{
+        callback(new Error('unreachable'), 0);
+      }
     });
   }
 
@@ -234,15 +241,19 @@ export class L530Accessory {
    */
   getColorTemp(callback: CharacteristicGetCallback) {
     this.l530.getColorTemp().then((response) => {
-      const color_temp = response;
+      if(response !== undefined){
+        const color_temp = response;
 
-      this.platform.log.debug('Get Characteristic Color Temperature ->', color_temp);
-
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, color_temp);
+        this.platform.log.debug('Get Characteristic Color Temperature ->', color_temp);
+  
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        callback(null, color_temp);
+      }else{
+        callback(new Error('unreachable'), 0);
+      }
     });
   }
 
@@ -272,19 +283,22 @@ export class L530Accessory {
    */
   getHue(callback: CharacteristicGetCallback) {
     this.l530.getDeviceInfo().then((response) => {
-      let hue = response.hue;
-
-      this.platform.log.debug('Get Characteristic Hue ->', hue);
-
-      //Tapo only returns the hue value when a color has been set. So we need to hanle the cases when an color is not set
-      if(!hue){
-        hue = 0;
+      if(response){
+        let hue = response.hue;
+        this.platform.log.debug('Get Characteristic Hue ->', hue);
+  
+        //Tapo only returns the hue value when a color has been set. So we need to hanle the cases when an color is not set
+        if(!hue){
+          hue = 0;
+        }
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        callback(null, hue);
+      } else{
+        callback(new Error('unreachable'), 0);
       }
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, hue);
     });
   }
 
@@ -314,18 +328,22 @@ export class L530Accessory {
    */
   getSaturation(callback: CharacteristicGetCallback) {
     this.l530.getDeviceInfo().then((response) => {
-      let saturation = response.saturation;
+      if(response){
+        let saturation = response.saturation;
 
-      this.platform.log.debug('Get Characteristic Saturation ->', saturation);
-      //Tapo only returns the saturation value when a color has been set. So we need to hanle the cases when an color is not set
-      if(!saturation){
-        saturation = 0;
+        this.platform.log.debug('Get Characteristic Saturation ->', saturation);
+        //Tapo only returns the saturation value when a color has been set. So we need to hanle the cases when an color is not set
+        if(!saturation){
+          saturation = 0;
+        }
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        callback(null, saturation);
+      } else{
+        callback(new Error('unreachable'), 0);
       }
-      // you must call the callback function
-      // the first argument should be null if there were no errors
-      // the second argument should be the value to return
-      // you must call the callback function
-      callback(null, saturation);
     });
   }
 
