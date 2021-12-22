@@ -74,12 +74,16 @@ export class P100Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.p100.setPowerState(value as boolean).then(() => {
-      this.platform.log.debug('Set Characteristic On ->', value);
-      this.p100.getSysInfo().device_on = value as boolean;
-
-      // you must call the callback function
-      callback(null);
+    this.p100.setPowerState(value as boolean).then((result) => {
+      if(result){
+        this.platform.log.debug('Set Characteristic On ->', value);
+        this.p100.getSysInfo().device_on = value as boolean;
+  
+        // you must call the callback function
+        callback(null);
+      } else{
+        callback(new Error('unreachable'));
+      }
     });
   }
 
