@@ -38,6 +38,8 @@ export default class L530 extends L510E {
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
+                  '"hue": 0,' +
+                  '"saturation": 0,'
                   '"color_temp": ' + roundedValue +
                   '},'+
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
@@ -59,6 +61,7 @@ export default class L530 extends L510E {
               '"method": "set_device_info",'+
               '"params": {'+
                   '"hue": ' + hue + ','+
+                  '"color_temp": 0,' +
                   '"saturation": ' + saturation +
                   '},'+
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
