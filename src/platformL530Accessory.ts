@@ -275,10 +275,11 @@ export class L530Accessory {
    */
   setHue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.l530.getSysInfo().device_on){
-      this.l530.setHue(Math.round(value as number)).then((result) => {
+      this.l530.setColor(Math.round(value as number), this.l530.getSysInfo().saturation).then((result) => {
         if(result){
           this.l530.getSysInfo().hue = Math.round(value as number);
           this.platform.log.debug('Set Characteristic Hue ->', Math.round(value as number));
+          this.platform.log.debug('With Characteristic Saturation ->', this.l530.getSysInfo().saturation);
   
           // you must call the callback function
           callback(null);
@@ -323,10 +324,11 @@ export class L530Accessory {
    */
   setSaturation(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.l530.getSysInfo().device_on){
-      this.l530.setSaturation(Math.round(value as number)).then((result) => {
+      this.l530.setColor(this.l530.getSysInfo().hue, Math.round(value as number)).then((result) => {
         if(result){
           this.l530.getSysInfo().saturation = Math.round(value as number);
           this.platform.log.debug('Set Characteristic Saturation ->', Math.round(value as number));
+          this.platform.log.debug('With Characteristic Hue ->', this.l530.getSysInfo().hue);
   
           // you must call the callback function
           callback(null);
