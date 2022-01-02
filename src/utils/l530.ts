@@ -50,26 +50,6 @@ export default class L530 extends L510E {
     });
   }
 
-  // async setColor(hue:number, saturation:number):Promise<boolean>{
-  //   if(!hue){
-  //     hue = 0;
-  //   }
-  //   if(!saturation){
-  //     saturation = 0;
-  //   }
-  //   const payload = '{'+
-  //             '"method": "set_device_info",'+
-  //             '"params": {'+
-  //                 '"hue": ' + Math.round(hue) + ','+
-  //                 '"color_temp": 0,' +
-  //                 '"saturation": ' + Math.round(saturation) +
-  //                 '},'+
-  //                 '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-  //                 '};';
-
-  //   return this.sendRequest(payload);
-  // }
-
   async setHue(hue:number):Promise<boolean>{
     if(!hue){
       hue = 0;
