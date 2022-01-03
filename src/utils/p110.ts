@@ -35,6 +35,9 @@ export default class P110 extends P100 {
           total: 0,
           current: 0,
         };
+
+        this.log.debug('Current consumption: ' + this._consumption.current);
+        this.log.debug('Total consumption: ' + this._consumption.total);
       }
      
       return response.result;
