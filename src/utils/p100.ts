@@ -440,7 +440,7 @@ export default class P100 {
             
         const config = {
           headers: headers,
-          timeout: this._timeout,
+          timeout: this._timeout * 1000,
         };
             
         return this.axios.post(URL, securePassthroughPayload, config)
