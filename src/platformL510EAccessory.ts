@@ -16,10 +16,11 @@ export class L510EAccessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly timeout: number,
     private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.l510e = new L510E(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
+    this.l510e = new L510E(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
     this.l510e.handshake().then(() => {
       this.l510e.login().then(() => {

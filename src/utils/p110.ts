@@ -12,8 +12,9 @@ export default class P110 extends P100 {
         public readonly ipAddress: string,
         public readonly email: string,
         public readonly password: string,
+        public readonly timeout: number,
   ) {
-    super(log, ipAddress, email, password);
+    super(log, ipAddress, email, password, timeout);
     this.log.debug('Constructing P110 on host: ' + ipAddress);
   }
 
@@ -26,18 +27,12 @@ export default class P110 extends P100 {
     return this.handleRequest(payload).then((response)=>{
       if(response && response.result){
         this._consumption = {
-          total: this._consumption ? this._consumption.total + ((response.result.current_power * 0.0833333) / 1000) : 
-            response.result.current_power / 1000,
           current: response.result.current_power / 1000,
         };
       } else{
         this._consumption = {
-          total: 0,
           current: 0,
         };
-
-        this.log.debug('Current consumption: ' + this._consumption.current);
-        this.log.debug('Total consumption: ' + this._consumption.total);
       }
      
       return response.result;

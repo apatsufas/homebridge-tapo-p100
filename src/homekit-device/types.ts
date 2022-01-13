@@ -26,6 +26,6 @@ export type ColorLightSysinfo = LightSysinfo &{
   };
 
 export type ConsumptionInfo = {
-    total: number;
+    total?: number;
     current: number;
 };

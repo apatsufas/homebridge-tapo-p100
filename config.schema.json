@@ -67,6 +67,12 @@
               "type" : "number",
               "default": "30",
               "required": false
+            },
+            "timeout":{
+              "title": "Request Timeout for the request sent to the Accessory (in seconds)",
+              "type" : "number",
+              "default": "2",
+              "required": false
             }
           }
         }

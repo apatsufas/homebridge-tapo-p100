@@ -16,10 +16,11 @@ export class P100Accessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly timeout: number,
     private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.p100 = new P100(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
+    this.p100 = new P100(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
     this.p100.handshake().then(() => {
       this.p100.login().then(() => {

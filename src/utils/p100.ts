@@ -3,7 +3,6 @@ import { PlugSysinfo } from '../homekit-device/types';
 import TpLinkCipher from './tpLinkCipher';
 import { v4 as uuidv4 } from 'uuid';
 import { AxiosResponse } from 'axios';
-import { rejects } from 'assert';
 
 export default class P100 {
 
@@ -20,6 +19,7 @@ export default class P100 {
     protected terminalUUID:string;
     private _plugSysInfo!:PlugSysinfo;
     private _reconnect_counter:number;
+    protected _timeout!: number;
 
     protected tpLinkCipher!:TpLinkCipher;
 
@@ -79,6 +79,7 @@ export default class P100 {
         public readonly ipAddress: string,
         public readonly email: string,
         public readonly password: string,
+        public readonly timeout: number,
     ) {
       this.log.debug('Constructing P100 on host: ' + ipAddress);
       this.ip = ipAddress;
@@ -86,6 +87,7 @@ export default class P100 {
       this.createKeyPair();
       this.terminalUUID = uuidv4();
       this._reconnect_counter = 0;
+      this._timeout = timeout;
     }
 
     private encryptCredentials(email : string, password: string){
@@ -438,7 +440,7 @@ export default class P100 {
             
         const config = {
           headers: headers,
-          timeout: 2000,
+          timeout: this._timeout,
         };
             
         return this.axios.post(URL, securePassthroughPayload, config)

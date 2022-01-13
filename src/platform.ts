@@ -108,13 +108,13 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
             // create the accessory handler for the restored accessory
             // this is imported from `platformAccessory.ts`
             if(device.type && device.type.toLowerCase() === 'colorlight'){
-              new L530Accessory(this.log, this, existingAccessory, device.updateInterval);
+              new L530Accessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             } else if(device.type && device.type.toLowerCase() === 'light'){
-              new L510EAccessory(this.log, this, existingAccessory, device.updateInterval);
+              new L510EAccessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             } else if(device.type && device.type.toLowerCase() === 'powerplug'){
-              new P110Accessory(this.log, this, existingAccessory, device.updateInterval);
+              new P110Accessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             } else{
-              new P100Accessory(this.log, this, existingAccessory, device.updateInterval);
+              new P100Accessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             }
       
             // update accessory cache with any changes to the accessory details and information
@@ -139,28 +139,28 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = device;
-            new L530Accessory(this.log, this, accessory, device.updateInterval);
+            new L530Accessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
           } else if(device.type && device.type.toLowerCase() === 'light'){
             // create a new accessory
             accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.LIGHTBULB);
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = device;
-            new L510EAccessory(this.log, this, accessory, device.updateInterval);
+            new L510EAccessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
           } else if(device.type && device.type.toLowerCase() === 'powerplug'){
             // create a new accessory
             accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.OUTLET);
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = device;
-            new P110Accessory(this.log, this, accessory, device.updateInterval);
+            new P110Accessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
           } else{
             // create a new accessory
             accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.OUTLET);
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = device;
-            new P100Accessory(this.log, this, accessory, device.updateInterval);
+            new P100Accessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
           }
 
           // link the accessory to your platform

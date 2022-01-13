@@ -21,7 +21,7 @@ export interface TapoConfigInput {
    * Manual list of devices
    */
   devices: Array<{ name?: string; host: string; type?: string | undefined; port?: number | undefined; 
-    updateInterval?: number | undefined; }>;
+    updateInterval?: number | undefined; timeout?: number; }>;
   /**
    * Username used in Tapo app
    */
@@ -51,7 +51,8 @@ type TapoConfigDefault = {
   password: string;
 
   pollingInterval: number;
-  devices?: Array<{ name?: string; host: string; type?: string | 'plug'; port?: number | undefined; updateInterval?: number | 30 }>;
+  devices?: Array<{ name?: string; host: string; type?: string | 'plug'; port?: number | undefined; updateInterval?: number | 30; 
+  timeout?: number | 2;}>;
 
   timeout: number;
   waitTimeUpdate: number;
@@ -75,7 +76,7 @@ export type TapoConfig = {
       };
     };
     devices: Array<{ name?: string; host: string; type?: string | undefined; port?: number | undefined; 
-      updateInterval?: number | undefined; }>;
+      updateInterval?: number | undefined; timeout?: number | undefined;}>;
   };
 };
 

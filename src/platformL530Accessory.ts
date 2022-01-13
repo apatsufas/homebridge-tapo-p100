@@ -19,10 +19,11 @@ export class L530Accessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly timeout: number,
     private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.l530 = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
+    this.l530 = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
     this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,

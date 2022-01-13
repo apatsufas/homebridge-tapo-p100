@@ -17,10 +17,11 @@ export class P110Accessory {
     public readonly log: Logger,
     private readonly platform: TapoPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly timeout: number,
     private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.p110 = new P110(this.log, accessory.context.device.host, platform.config.username, platform.config.password);
+    this.p110 = new P110(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
     this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,
