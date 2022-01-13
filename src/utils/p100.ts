@@ -195,7 +195,7 @@ export default class P100 {
   
         const config = {
           headers: headers,
-          timeout: 2000,
+          timeout: this._timeout * 1000,
         };
   
         await this.axios.post(URL, securePassthroughPayload, config)
@@ -299,7 +299,7 @@ export default class P100 {
               
         const config = {
           headers: headers,
-          timeout: 2000,
+          timeout: this._timeout * 1000,
         };
               
         return this.axios.post(URL, securePassthroughPayload, config)
