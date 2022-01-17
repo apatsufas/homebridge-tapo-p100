@@ -435,6 +435,7 @@ export class L530Accessory {
           this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
         } else{
           this.setNoResponse();
+          interval += 300000;
         }
 
         if(saturation){
@@ -450,13 +451,18 @@ export class L530Accessory {
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
         }
       }
+
+      setTimeout(()=>{
+        this.updateState(interval);
+      }, interval);
     }).catch(()=>{
       this.setNoResponse();
+      setTimeout(()=>{
+        this.updateState(interval + 300000);
+      }, interval);
     });
 
-    setTimeout(()=>{
-      this.updateState(interval);
-    }, interval);
+   
   }
 
   private setNoResponse():void{

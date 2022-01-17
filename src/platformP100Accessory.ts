@@ -143,17 +143,20 @@ export class P100Accessory {
           this.setNoResponse();
         }
       } else{
-        this.platform.log.debug('Error');
         this.setNoResponse();
+        interval += 300000;
+        setTimeout(()=>{
+          this.updateState(interval);
+        }, interval);
       }
     }).catch(()=>{
-      this.platform.log.debug('Error');
       this.setNoResponse();
+      setTimeout(()=>{
+        this.updateState(interval + 300000);
+      }, interval);
     });
 
-    setTimeout(()=>{
-      this.updateState(interval);
-    }, interval);
+    
   }
 
   private setNoResponse():void{

@@ -175,14 +175,21 @@ export class L510EAccessory {
           this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
         } else{
           this.setNoResponse();
+          interval += 300000;
         }
 
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
         }
       }
+      setTimeout(()=>{
+        this.updateState(interval + 300000);
+      }, interval);
     }).catch(()=>{
       this.setNoResponse();
+      setTimeout(()=>{
+        this.updateState(interval + 300000);
+      }, interval);
     });
 
     setTimeout(()=>{

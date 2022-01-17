@@ -150,16 +150,21 @@ export class P110Accessory {
         if(isOn !== undefined){
           this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
         } else{
+          interval += 300000;
           this.setNoResponse();
         }
       }
+
+      setTimeout(()=>{
+        this.updateState(interval);
+      }, interval);
     }).catch(()=>{
       this.setNoResponse();
-    });
 
-    setTimeout(()=>{
-      this.updateState(interval);
-    }, interval);
+      setTimeout(()=>{
+        this.updateState(interval + 300000);
+      }, interval);
+    });
   }
 
   /**
