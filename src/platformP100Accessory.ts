@@ -155,8 +155,6 @@ export class P100Accessory {
         this.updateState(interval + 300000);
       }, interval);
     });
-
-    
   }
 
   private setNoResponse():void{
