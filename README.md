@@ -5,7 +5,6 @@
 
 </p>
 
-
 # Homebridge Tapo Platform Plugin
 
 This is a Homebridge platform plugin for the TP-Link Tapo P100, P105, P110 Plugs and L510E, L530E Lightbulbs.
@@ -19,7 +18,7 @@ Following features are supported per Device:
 
 Tested with:
 
-- Tapo P100 (EU)
+- Tapo P100 (EU, UK)
 - Tapo L510E
 - Tapo L530E
 
@@ -32,18 +31,19 @@ Tested with:
 ## Configuration
 
 The available fields in the config.json file are:
- - `platform` [required] Always "TapoP100"
- - `name` [required] Descriptive name of the platform
- - `username` [required] The username with which you registered/login in the Tapo app.
- - `password`: [required] The password with which you registered/login in the Tapo app
- - `devices`: [required] An array of devices
- - `name`: [required] The name of each device
- - `host`: [required] The host (ip) of each device 
- - `type`: [optional] Plug, PowerPlug, Light or Colorlight. Use Plug for P100 or P105, PowerPlug for P110, Light for L510E and Colorlight for L530. If not provided default is Plug.
+
+- `platform` [required] Always "TapoP100"
+- `name` [required] Descriptive name of the platform
+- `username` [required] The username with which you registered/login in the Tapo app.
+- `password`: [required] The password with which you registered/login in the Tapo app
+- `devices`: [required] An array of devices
+  - `name`: [required] The name of each device
+  - `host`: [required] The host (local IP address) of each device
+  - `type`: [optional] Plug, PowerPlug, Light or Colorlight. Use Plug for P100 or P105, PowerPlug for P110, Light for L510E and Colorlight for L530. If not provided, default is Plug.
 
 Example:
 
-```
+```json
 "platforms": [
     {
         "name": "Tapo Smart Platform",
@@ -53,11 +53,11 @@ Example:
         "devices": [
             {
                 "name": "Kitchen",
-                "host": "192.168.1.21"
+                "host": "192.168.1.21",
                 "type": "Plug"
             }
         ]
-    }    
+    }
 ]
 ```
 
@@ -65,13 +65,13 @@ Example:
 
 The plugin polls this outlet endpoint:
 
-```
+```text
 http://[host]/app?token
 ```
 
 Example response from this endpoint:
 
-```
+```json
 {
 "device_id":"",
 "fw_ver":"1.2.1 Build 20200616 Rel. 31218",
@@ -103,7 +103,9 @@ Example response from this endpoint:
 "time_diff":120,
 "lang":"en_US"}}
 ```
+
 ## Information
+
 This plugin will also allow you to control the Tapo Plugs and Lights even if you have blocked the internet connectivity of the device.
 
 I created the plugin for personal use and wanted to share it with other people too.

@@ -8,7 +8,7 @@
       "name": {
         "title": "Name",
         "type": "string",
-        "description": "Plugin name as displaued in the Homrbridge log",
+        "description": "Plugin name as displayed in the Homebridge log",
         "required": true,
         "default": "Tapo Smart Platform"
       },
@@ -28,11 +28,11 @@
       },
       "devices": {
         "title": "Devices",
-        "type": "array", 
-        "description": "The ip adrresses and the names for your Tapo Devices",
-        "items":{
+        "type": "array",
+        "description": "The IP addresses and the names for your Tapo Devices",
+        "items": {
           "title": "Device",
-          "type": "object", 
+          "type": "object",
           "properties": {
             "name": {
               "title": "Name",
@@ -40,7 +40,7 @@
               "required": true,
               "examples": [
                 "Standing Lamp"
-            ]
+              ]
             },
             "host": {
               "title": "IP",
@@ -48,29 +48,40 @@
               "required": true,
               "examples": [
                 "192.168.1.3"
-            ]
+              ]
             },
             "type": {
               "title": "Colorlight, Light, Plug (with Power monitoring, use for P110) or Plug",
               "type": "string",
               "default": "plug",
-              "oneOf": [
-                { "title": "Plug", "enum": ["Plug"] },
-                { "title": "Plug (with Power monitoring)", "enum": ["PowerPlug"] },
-                { "title": "Light", "enum": ["Light"] },
-                { "title": "Colorlight", "enum": ["Colorlight"] }
+              "oneOf": [{
+                  "title": "Plug",
+                  "enum": ["Plug"]
+                },
+                {
+                  "title": "Plug (with Power monitoring)",
+                  "enum": ["PowerPlug"]
+                },
+                {
+                  "title": "Light",
+                  "enum": ["Light"]
+                },
+                {
+                  "title": "Colorlight",
+                  "enum": ["Colorlight"]
+                }
               ],
               "required": false
             },
-            "updateInterval":{
+            "updateInterval": {
               "title": "Interval in which the state of the Accessory should be updated (in seconds)",
-              "type" : "number",
+              "type": "number",
               "default": "30",
               "required": false
             },
-            "timeout":{
+            "timeout": {
               "title": "Request Timeout for the request sent to the Accessory (in seconds)",
-              "type" : "number",
+              "type": "number",
               "default": "2",
               "required": false
             }
