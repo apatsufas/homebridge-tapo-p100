@@ -28,10 +28,12 @@ export default class P110 extends P100 {
       if(response && response.result){
         this._consumption = {
           current: response.result.current_power / 1000,
+          total: response.result.today_energy / 1000,
         };
       } else{
         this._consumption = {
           current: 0,
+          total: 0,
         };
       }
      
