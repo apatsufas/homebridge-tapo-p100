@@ -172,6 +172,8 @@ export class L530Accessory {
       } else{
         callback(new Error('unreachable'), false);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), false);
     });
   }
 
@@ -220,6 +222,8 @@ export class L530Accessory {
       } else{
         callback(new Error('unreachable'), 0);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), 0);
     });
   }
 
@@ -267,6 +271,8 @@ export class L530Accessory {
       }else{
         callback(new Error('unreachable'), 0);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), 0);
     });
   }
 
@@ -316,6 +322,8 @@ export class L530Accessory {
       } else{
         callback(new Error('unreachable'), 0);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), 0);
     });
   }
 
@@ -365,6 +373,8 @@ export class L530Accessory {
       } else{
         callback(new Error('unreachable'), 0);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), 0);
     });
   }
 

@@ -113,6 +113,8 @@ export class P100Accessory {
       } else{
         callback(new Error('unreachable'), false);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), false);
     });
   }
 

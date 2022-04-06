@@ -121,6 +121,8 @@ export class P110Accessory {
       } else{
         callback(new Error('unreachable'), false);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), false);
     });
   }
 

@@ -111,6 +111,8 @@ export class L510EAccessory {
       } else{
         callback(new Error('unreachable'), false);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), false);
     });
   }
 
@@ -160,6 +162,8 @@ export class L510EAccessory {
       } else{
         callback(new Error('unreachable'), 0);
       }
+    }).catch(() => {
+      callback(new Error('unreachable'), 0);
     });
   }
 

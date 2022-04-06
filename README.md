@@ -40,6 +40,8 @@ The available fields in the config.json file are:
   - `name`: [required] The name of each device
   - `host`: [required] The host (local IP address) of each device
   - `type`: [optional] Plug, PowerPlug, Light or Colorlight. Use Plug for P100 or P105, PowerPlug for P110, Light for L510E and Colorlight for L530. If not provided, default is Plug.
+  - `updateInterval`: [optional] miliseconds. Set the update interval for the plugin. Determines how often the plugin will request the state from the Tapo Device.
+  - `timeout`: [optional] miliseconds. Sets the request timeout header for the requests to the Tapo Device.
 
 Example:
 
@@ -54,7 +56,9 @@ Example:
             {
                 "name": "Kitchen",
                 "host": "192.168.1.21",
-                "type": "Plug"
+                "type": "Plug",
+                "updateInterval": 30,
+                "timeout": 2
             }
         ]
     }
