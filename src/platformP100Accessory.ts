@@ -23,40 +23,22 @@ export class P100Accessory {
     this.p100 = new P100(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
     this.p100.handshake().then(() => {
-      this.p100.login().then(() => {
-        this.p100.getDeviceInfo().then((sysInfo) => {
-          // set accessory information
-          this.accessory.getService(this.platform.Service.AccessoryInformation)!
-            .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
-            .setCharacteristic(this.platform.Characteristic.Model, 'Tapo P100')
-            .setCharacteristic(this.platform.Characteristic.SerialNumber, sysInfo.hw_id);
-
-          // each service must implement at-minimum the "required characteristics" for the given service type
-          // see https://developers.homebridge.io/#/service/Outlet
-
-          // register handlers for the On/Off Characteristic
-          this.service.getCharacteristic(this.platform.Characteristic.On)
-            .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
-            .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
-
-          // register handlers for the OutletInUse Characteristic
-          this.service.getCharacteristic(this.platform.Characteristic.OutletInUse)
-            .on('get', this.handleOutletInUseGet.bind(this));
-
-          const interval = updateInterval ? updateInterval*1000 : 30000;
-          this.log.debug('interval: ' + interval);
-
-          setTimeout(()=>{
-            this.updateState(interval);
-          }, interval);
+      if(this.p100.is_klap){
+        this.p100.handshake_new().then(() => {
+          this.init(platform, updateInterval);
         }).catch(() => {
           this.setNoResponse();
-          this.log.error('52 - Get Device Info failed');
+          this.log.error('KLAP Handshake failed');
+          this.p100.is_klap = false;
         });
-      }).catch(() => {
-        this.setNoResponse();
-        this.log.error('Login failed');
-      });
+      } else{
+        this.p100.login().then(() => {
+          this.init(platform, updateInterval);
+        }).catch(() => {
+          this.setNoResponse();
+          this.log.error('Login failed');
+        });
+      }
     }).catch(() => {
       this.setNoResponse();
       this.log.error('Handshake failed');
@@ -68,6 +50,38 @@ export class P100Accessory {
     // set the service name, this is what is displayed as the default name on the Home app
     // we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
+  }
+
+  private init(platform: TapoPlatform, updateInterval?: number){
+    this.p100.getDeviceInfo().then((sysInfo) => {
+      // set accessory information
+      this.accessory.getService(this.platform.Service.AccessoryInformation)!
+        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
+        .setCharacteristic(this.platform.Characteristic.Model, 'Tapo P100')
+        .setCharacteristic(this.platform.Characteristic.SerialNumber, sysInfo.hw_id);
+
+      // each service must implement at-minimum the "required characteristics" for the given service type
+      // see https://developers.homebridge.io/#/service/Outlet
+
+      // register handlers for the On/Off Characteristic
+      this.service.getCharacteristic(this.platform.Characteristic.On)
+        .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
+        .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+
+      // register handlers for the OutletInUse Characteristic
+      this.service.getCharacteristic(this.platform.Characteristic.OutletInUse)
+        .on('get', this.handleOutletInUseGet.bind(this));
+
+      const interval = updateInterval ? updateInterval*1000 : 30000;
+      this.log.debug('interval: ' + interval);
+
+      setTimeout(()=>{
+        this.updateState(interval);
+      }, interval);
+    }).catch(() => {
+      this.setNoResponse();
+      this.log.error('52 - Get Device Info failed');
+    });
   }
 
   /**

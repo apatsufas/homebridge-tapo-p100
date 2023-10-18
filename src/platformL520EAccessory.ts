@@ -1,16 +1,16 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
 import TapoPlatform from './platform';
-import L510E from './utils/l510e';
+import L520E from './utils/l520e';
 
 /**
  * L510E Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class L510EAccessory {
+export class L520EAccessory {
   private service: Service;
 
-  private l510e: L510E;
+  private l520e: L520E;
 
   constructor(
     public readonly log: Logger,
@@ -20,19 +20,19 @@ export class L510EAccessory {
     private readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.l510e = new L510E(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
+    this.l520e = new L520E(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
-    this.l510e.handshake().then(() => {
-      if(this.l510e.is_klap){
-        this.l510e.handshake_new().then(() => {
+    this.l520e.handshake().then(() => {
+      if(this.l520e.is_klap){
+        this.l520e.handshake_new().then(() => {
           this.init(platform, updateInterval);
         }).catch(() => {
           this.setNoResponse();
           this.log.error('KLAP Handshake failed');
-          this.l510e.is_klap = false;
+          this.l520e.is_klap = false;
         });
       } else{
-        this.l510e.login().then(() => {
+        this.l520e.login().then(() => {
           this.init(platform, updateInterval);
         }).catch(() => {
           this.setNoResponse();
@@ -53,11 +53,11 @@ export class L510EAccessory {
   }
 
   private init(platform: TapoPlatform, updateInterval?: number){
-    this.l510e.getDeviceInfo().then((sysInfo) => {
+    this.l520e.getDeviceInfo().then((sysInfo) => {
       // set accessory information
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
-        .setCharacteristic(this.platform.Characteristic.Model, 'Tapo L510E')
+        .setCharacteristic(this.platform.Characteristic.Model, 'Tapo L520E')
         .setCharacteristic(this.platform.Characteristic.SerialNumber, sysInfo.hw_id);
 
       // each service must implement at-minimum the "required characteristics" for the given service type
@@ -73,6 +73,17 @@ export class L510EAccessory {
         .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
         .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
 
+      // register handlers for the ColorTemperature Characteristic
+      this.service.getCharacteristic(this.platform.Characteristic.ColorTemperature)
+        .on('set', this.setColorTemp.bind(this))                // SET - bind to the `setColorTemp` method below
+        .on('get', this.getColorTemp.bind(this))
+        .setProps({
+          minValue: 154,
+          maxValue: 400,
+          minStep: 1,
+        });              // GET - bind to the `getColorTemp` method below
+
+      
       const interval = updateInterval ? updateInterval*1000 : 30000;
       setTimeout(()=>{
         this.updateState(interval);
@@ -88,10 +99,10 @@ export class L510EAccessory {
    * These are sent when the user changes the state of an accessory.
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l510e.setPowerState(value as boolean).then((result) => {
+    this.l520e.setPowerState(value as boolean).then((result) => {
       if(result){
         this.platform.log.debug('Set Characteristic On ->', value);
-        this.l510e.getSysInfo().device_on = value as boolean;
+        this.l520e.getSysInfo().device_on = value as boolean;
         // you must call the callback function
         callback(null);
       } else{
@@ -107,7 +118,7 @@ export class L510EAccessory {
    */
   getOn(callback: CharacteristicGetCallback) {
     // implement your own code to check if the device is on
-    this.l510e.getDeviceInfo().then((response) => {
+    this.l520e.getDeviceInfo().then((response) => {
       if(response){
         const isOn = response.device_on;
 
@@ -135,11 +146,11 @@ export class L510EAccessory {
    * These are sent when the user changes the state of an accessory.
    */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.l510e.getSysInfo().device_on){
-      this.l510e.setBrightness(value as number).then((result) => {
+    if(this.l520e.getSysInfo().device_on){
+      this.l520e.setBrightness(value as number).then((result) => {
         if(result){
           this.platform.log.debug('Set Characteristic Brightness ->', value);
-          this.l510e.getSysInfo().brightness = value as number;
+          this.l520e.getSysInfo().brightness = value as number;
   
           // you must call the callback function
           callback(null);
@@ -158,7 +169,7 @@ export class L510EAccessory {
    * 
    */
   getBrightness(callback: CharacteristicGetCallback) {
-    this.l510e.getDeviceInfo().then((response) => {
+    this.l520e.getDeviceInfo().then((response) => {
       if(response){
         const brightness = response.brightness;
 
@@ -182,7 +193,7 @@ export class L510EAccessory {
   }
 
   private updateState(interval:number){
-    this.l510e.getDeviceInfo().then((response) => {
+    this.l520e.getDeviceInfo().then((response) => {
       if(response){
         const isOn = response.device_on;
         const brightness = response.brightness;
@@ -213,6 +224,55 @@ export class L510EAccessory {
     setTimeout(()=>{
       this.updateState(interval);
     }, interval);
+  }
+
+  /**
+   * Handle "SET" requests from HomeKit
+   * These are sent when the user changes the state of an accessory.
+   */
+  setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.log.debug('Color Temp Homekit :' + value);
+    if(this.l520e.getSysInfo().device_on){
+      this.l520e.setColorTemp(value as number).then((result) => {
+        if(result){
+          this.l520e.getSysInfo().color_temp = value as number;
+          this.platform.log.debug('Set Characteristic Color Temperature ->', value);
+    
+          // you must call the callback function
+          callback(null);
+        } else{
+          callback(new Error('unreachable'), false);
+        }
+      });
+    } else{
+      // you must call the callback function
+      callback(null);
+    }
+  }
+
+  /**
+   * Handle the "GET" requests from HomeKit
+   * These are sent when HomeKit wants to know the current state of the accessory.
+   * 
+   */
+  getColorTemp(callback: CharacteristicGetCallback) {
+    this.l520e.getColorTemp().then((response) => {
+      if(response !== undefined){
+        const color_temp = response;
+
+        this.platform.log.debug('Get Characteristic Color Temperature ->', color_temp);
+  
+        // you must call the callback function
+        // the first argument should be null if there were no errors
+        // the second argument should be the value to return
+        // you must call the callback function
+        callback(null, color_temp);
+      }else{
+        callback(new Error('unreachable'), 0);
+      }
+    }).catch(() => {
+      callback(new Error('unreachable'), 0);
+    });
   }
 
   private setNoResponse():void{
