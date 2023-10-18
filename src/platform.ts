@@ -18,6 +18,7 @@ import { L530Accessory } from './platformL530Accessory';
 import fakegato from 'fakegato-history';
 import { P110Accessory } from './platformP110Accessory';
 import Characteristics from './custom-characteristics';
+import { L520EAccessory } from './platformL520EAccessory';
 
 /**
  * TapoPlatform
@@ -109,6 +110,8 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
             // this is imported from `platformAccessory.ts`
             if(device.type && device.type.toLowerCase() === 'colorlight'){
               new L530Accessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
+            } else if(device.type && device.type.toLowerCase() === 'whiteLight'){
+              new L520EAccessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             } else if(device.type && device.type.toLowerCase() === 'light'){
               new L510EAccessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             } else if(device.type && device.type.toLowerCase() === 'powerplug'){
@@ -147,6 +150,13 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = device;
             new L510EAccessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
+          } else if(device.type && device.type.toLowerCase() === 'whiteLight'){
+            // create a new accessory
+            accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.LIGHTBULB);
+            // store a copy of the device object in the `accessory.context`
+            // the `context` property can be used to store any data about the accessory you may need
+            accessory.context.device = device;
+            new L520EAccessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
           } else if(device.type && device.type.toLowerCase() === 'powerplug'){
             // create a new accessory
             accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.OUTLET);

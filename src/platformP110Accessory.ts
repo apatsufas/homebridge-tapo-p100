@@ -30,42 +30,22 @@ export class P110Accessory {
     });
 
     this.p110.handshake().then(() => {
-      this.p110.login().then(() => {
-        this.p110.getDeviceInfo().then((sysInfo) => {
-          // set accessory information
-          this.accessory.getService(this.platform.Service.AccessoryInformation)!
-            .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
-            .setCharacteristic(this.platform.Characteristic.Model, 'Tapo P110')
-            .setCharacteristic(this.platform.Characteristic.SerialNumber, sysInfo.hw_id);
-
-          // each service must implement at-minimum the "required characteristics" for the given service type
-          // see https://developers.homebridge.io/#/service/Outlet
-
-          // register handlers for the On/Off Characteristic
-          this.service.getCharacteristic(this.platform.Characteristic.On)
-            .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
-            .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
-
-          this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
-            .on('get', this.getCurrentConsumption.bind(this));
-
-          this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
-            .on('get', this.getTotalConsumption.bind(this));
-
-          this.updateConsumption();
-
-          const interval = updateInterval ? updateInterval*1000 : 30000;
-          setTimeout(()=>{
-            this.updateState(interval);
-          }, interval);
+      if(this.p110.is_klap){
+        this.p110.handshake_new().then(() => {
+          this.init(platform, updateInterval);
         }).catch(() => {
           this.setNoResponse();
-          this.log.error('Get Device Info failed');
+          this.log.error('KLAP Handshake failed');
+          this.p110.is_klap = false;
         });
-      }).catch(() => {
-        this.setNoResponse();
-        this.log.error('Login failed');
-      });
+      } else{
+        this.p110.login().then(() => {
+          this.init(platform, updateInterval);
+        }).catch(() => {
+          this.setNoResponse();
+          this.log.error('Login failed');
+        });
+      }
     }).catch(() => {
       this.setNoResponse();
       this.log.error('Handshake failed');
@@ -77,6 +57,43 @@ export class P110Accessory {
     // set the service name, this is what is displayed as the default name on the Home app
     // we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
+  }
+
+  private init(platform: TapoPlatform, updateInterval?: number){
+    this.p110.getDeviceInfo().then((sysInfo) => {
+      // set accessory information
+      this.accessory.getService(this.platform.Service.AccessoryInformation)!
+        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
+        .setCharacteristic(this.platform.Characteristic.Model, 'Tapo P110')
+        .setCharacteristic(this.platform.Characteristic.SerialNumber, sysInfo.hw_id);
+
+      // each service must implement at-minimum the "required characteristics" for the given service type
+      // see https://developers.homebridge.io/#/service/Outlet
+
+      // register handlers for the On/Off Characteristic
+      this.service.getCharacteristic(this.platform.Characteristic.On)
+        .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
+        .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+
+      this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
+        .on('get', this.getCurrentConsumption.bind(this));
+
+      this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
+        .on('get', this.getTotalConsumption.bind(this));
+
+      this.service.getCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic)
+        .on('set', this.resetConsumption.bind(this));
+
+      this.updateConsumption();
+
+      const interval = updateInterval ? updateInterval*1000 : 30000;
+      setTimeout(()=>{
+        this.updateState(interval);
+      }, interval);
+    }).catch(() => {
+      this.setNoResponse();
+      this.log.error('Get Device Info failed');
+    });
   }
 
   /**
@@ -181,7 +198,11 @@ export class P110Accessory {
     // the first argument should be null if there were no errors
     // the second argument should be the value to return
     // you must call the callback function
-    callback(null, consumption.current);
+    if(consumption){
+      callback(null, consumption.current);
+    }else{
+      callback(null, 0);
+    }
   }
 
   /**
@@ -196,8 +217,31 @@ export class P110Accessory {
     // the first argument should be null if there were no errors
     // the second argument should be the value to return
     // you must call the callback function
-    callback(null, consumption.total);
+    if(consumption){
+      callback(null, consumption.total);
+    }else{
+      callback(null, 0);
+    }
   }
+
+  /**
+   * Handle the "SET" requests from HomeKit
+   *
+   */
+  resetConsumption(value: CharacteristicValue, callback: CharacteristicGetCallback) {
+    const now = Math.round(new Date().valueOf() / 1000);
+    const epoch = Math.round(new Date('2001-01-01T00:00:00Z').valueOf() / 1000);
+
+    this.service.updateCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic, now - epoch);
+
+    this.service.updateCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic, 0);
+    // you must call the callback function
+    // the first argument should be null if there were no errors
+    // the second argument should be the value to return
+    // you must call the callback function
+    callback(null);
+  }
+
 
   private setNoResponse():void{
     //@ts-ignore

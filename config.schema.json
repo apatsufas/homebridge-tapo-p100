@@ -51,23 +51,27 @@
               ]
             },
             "type": {
-              "title": "Colorlight, Light, Plug (with Power monitoring, use for P110) or Plug",
+              "title": "P100, P110, L510 etc.",
               "type": "string",
               "default": "plug",
               "oneOf": [{
-                  "title": "Plug",
+                  "title": "P100",
                   "enum": ["Plug"]
                 },
                 {
-                  "title": "Plug (with Power monitoring)",
+                  "title": "P110",
                   "enum": ["PowerPlug"]
                 },
                 {
-                  "title": "Light",
+                  "title": "L510",
                   "enum": ["Light"]
                 },
                 {
-                  "title": "Colorlight",
+                  "title": "L520",
+                  "enum": ["WhiteLight"]
+                },
+                {
+                  "title": "L530",
                   "enum": ["Colorlight"]
                 }
               ],
