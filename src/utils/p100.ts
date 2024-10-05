@@ -540,9 +540,8 @@ export default class P100 implements TpLinkAccessory{
   protected handleError(errorCode: number | string, line: string): boolean {
     const errorMessage = this.ERROR_CODES[errorCode];
     this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
-
     if (typeof errorCode === 'number' && errorCode === 1003) {
-      this.is_klap = false;
+      this.is_klap = true;
     }
     return false;
   }

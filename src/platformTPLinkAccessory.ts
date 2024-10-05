@@ -31,13 +31,15 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
   protected initialise(platform: TapoPlatform, updateInterval?: number):void{
     this.tpLinkAccessory.handshake().then(() => {
       if(this.tpLinkAccessory.is_klap){
-        this.tpLinkAccessory.handshake_new().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('KLAP Handshake failed');
-          this.tpLinkAccessory.is_klap = false;
-        });
+        setTimeout(()=>{
+          this.tpLinkAccessory.handshake_new().then(() => {
+            this.init(platform, updateInterval);
+          }).catch(() => {
+            this.setNoResponse();
+            this.log.error('KLAP Handshake failed');
+            this.tpLinkAccessory.is_klap = false;
+          });
+        }, 100);
       } else{
         this.tpLinkAccessory.login().then(() => {
           this.init(platform, updateInterval);
