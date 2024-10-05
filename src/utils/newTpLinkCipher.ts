@@ -5,10 +5,12 @@ export default class NewTpLinkCipher{
     public sig: any;
     public seq: any;
 
-    constructor(localSeed: Buffer, remoteSeed: Buffer, authHash: Buffer) {
-      this.calculateKey(localSeed, remoteSeed, authHash);
-      this.calculateIvSeq(localSeed, remoteSeed, authHash);
-      this.calculateSig(localSeed, remoteSeed, authHash);
+    constructor(localSeed: Buffer, remoteSeed: Buffer, authHash: Buffer | undefined) {
+      if(authHash){
+        this.calculateKey(localSeed, remoteSeed, authHash);
+        this.calculateIvSeq(localSeed, remoteSeed, authHash);
+        this.calculateSig(localSeed, remoteSeed, authHash);
+      }
     }
   
     public encrypt(data: Buffer | string) {

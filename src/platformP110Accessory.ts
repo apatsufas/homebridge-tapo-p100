@@ -1,27 +1,28 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, 
+import { PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, 
   Logger } from 'homebridge';
 import TapoPlatform from './platform';
 import P110 from './utils/p110';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
 
 /**
  * P110 Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class P110Accessory {
-  private service: Service;
+export class P110Accessory extends TPLinkPlatformAccessory<P110>{
   private readonly fakeGatoHistoryService?;
-  private p110: P110;
 
   constructor(
     public readonly log: Logger,
-    private readonly platform: TapoPlatform,
-    private readonly accessory: PlatformAccessory,
-    private readonly timeout: number,
-    private readonly updateInterval?: number,
+    protected readonly platform: TapoPlatform,
+    protected readonly accessory: PlatformAccessory,
+    protected readonly timeout: number,
+    protected readonly updateInterval?: number,
   ) {
-    this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.p110 = new P110(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
+    super(log, platform, accessory, timeout, updateInterval);
+
+    this.tpLinkAccessory = new P110(this.log, accessory.context.device.host, platform.config.username, platform.config.password, 
+      this.timeout);
 
     this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,
@@ -29,27 +30,7 @@ export class P110Accessory {
       storage:'fs',
     });
 
-    this.p110.handshake().then(() => {
-      if(this.p110.is_klap){
-        this.p110.handshake_new().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('KLAP Handshake failed');
-          this.p110.is_klap = false;
-        });
-      } else{
-        this.p110.login().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('Login failed');
-        });
-      }
-    }).catch(() => {
-      this.setNoResponse();
-      this.log.error('Handshake failed');
-    });
+    this.initialise(platform, updateInterval);
     
     // get the Outlet service if it exists, otherwise create a new Outlet service
     this.service = this.accessory.getService(this.platform.Service.Outlet) || this.accessory.addService(this.platform.Service.Outlet);
@@ -59,8 +40,8 @@ export class P110Accessory {
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
   }
 
-  private init(platform: TapoPlatform, updateInterval?: number){
-    this.p110.getDeviceInfo().then((sysInfo) => {
+  protected init(platform: TapoPlatform, updateInterval?: number){
+    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
       // set accessory information
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
@@ -96,55 +77,8 @@ export class P110Accessory {
     });
   }
 
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory.
-   */
-  setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.p110.setPowerState(value as boolean).then((result) => {
-      if(result){
-        this.platform.log.debug('Set Characteristic On ->', value);
-        this.p110.getSysInfo().device_on = value as boolean;
-        // you must call the callback function
-        callback(null);
-      } else{
-        callback(new Error('unreachable'), false);
-      }
-    });
-  }
-
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getOn(callback: CharacteristicGetCallback) {
-    // implement your own code to check if the device is on
-    this.p110.getDeviceInfo().then((response) => {
-      if(response){
-        const isOn = response.device_on;
-
-        this.platform.log.debug('Get Characteristic On ->', isOn);
-  
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        if(isOn !== undefined){
-          callback(null, isOn);
-        } else{
-          callback(new Error('unreachable'), isOn);
-        }
-      } else{
-        callback(new Error('unreachable'), false);
-      }
-    }).catch(() => {
-      callback(new Error('unreachable'), false);
-    });
-  }
-
   private updateConsumption(){
-    this.p110.getEnergyUsage().then((response) => {
+    this.tpLinkAccessory.getEnergyUsage().then((response) => {
       if (this.fakeGatoHistoryService && response && response.current_power) {
         this.platform.log.debug('Get Characteristic Power consumption ->', response.current_power);
         this.fakeGatoHistoryService.addEntry({
@@ -159,40 +93,13 @@ export class P110Accessory {
     }, 300000);
   }
 
-  private updateState(interval:number){
-    this.p110.getDeviceInfo().then((response) => {
-      if(response){
-        const isOn = response.device_on;
-
-        this.platform.log.debug('Get Characteristic On ->', isOn);
-  
-        if(isOn !== undefined){
-          this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
-        } else{
-          interval += 300000;
-          this.setNoResponse();
-        }
-      }
-
-      setTimeout(()=>{
-        this.updateState(interval);
-      }, interval);
-    }).catch(()=>{
-      this.setNoResponse();
-
-      setTimeout(()=>{
-        this.updateState(interval + 300000);
-      }, interval);
-    });
-  }
-
   /**
    * Handle the "GET" requests from HomeKit
    * These are sent when HomeKit wants to know the current state of the accessory.
    *
    */
   getCurrentConsumption(callback: CharacteristicGetCallback) {
-    const consumption = this.p110.getPowerConsumption();
+    const consumption = this.tpLinkAccessory.getPowerConsumption();
 
     // you must call the callback function
     // the first argument should be null if there were no errors
@@ -211,7 +118,7 @@ export class P110Accessory {
    *
    */
   getTotalConsumption(callback: CharacteristicGetCallback) {
-    const consumption = this.p110.getPowerConsumption();
+    const consumption = this.tpLinkAccessory.getPowerConsumption();
 
     // you must call the callback function
     // the first argument should be null if there were no errors
@@ -240,11 +147,5 @@ export class P110Accessory {
     // the second argument should be the value to return
     // you must call the callback function
     callback(null);
-  }
-
-
-  private setNoResponse():void{
-    //@ts-ignore
-    this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }

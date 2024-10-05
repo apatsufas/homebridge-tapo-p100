@@ -1,29 +1,30 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
+import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
   AdaptiveLightingController} from 'homebridge';
 import TapoPlatform from './platform';
 import L530 from './utils/l530';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
 
 /**
  * L530 Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class L530Accessory {
-  private service: Service;
+export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   private adaptiveLightingController!: AdaptiveLightingController;
-  private l530: L530;
   private readonly fakeGatoHistoryService?;
   private lastMeasurement: number | null = null;
 
   constructor(
     public readonly log: Logger,
-    private readonly platform: TapoPlatform,
-    private readonly accessory: PlatformAccessory,
-    private readonly timeout: number,
-    private readonly updateInterval?: number,
+    protected readonly platform: TapoPlatform,
+    protected readonly accessory: PlatformAccessory,
+    protected readonly timeout: number,
+    protected readonly updateInterval?: number,
   ) {
-    this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.l530 = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
+    super(log, platform, accessory, timeout, updateInterval);
+
+    this.tpLinkAccessory = new L530(this.log, accessory.context.device.host, platform.config.username, platform.config.password, 
+      this.timeout);
 
     this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,
@@ -31,28 +32,8 @@ export class L530Accessory {
       storage:'fs',     
     });
 
-    this.l530.handshake().then(() => {
-      if(this.l530.is_klap){
-        this.l530.handshake_new().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('KLAP Handshake failed');
-          this.l530.is_klap = false;
-        });
-      } else{
-        this.l530.login().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('Login failed');
-        });
-      }
-    }).catch(() => {
-      this.setNoResponse();
-      this.log.error('Handshake failed');
-    });
-    
+    this.initialise(platform, updateInterval);
+
     // get the Outlet service if it exists, otherwise create a new Outlet service
     this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
 
@@ -61,8 +42,8 @@ export class L530Accessory {
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
   }
 
-  private init(platform: TapoPlatform, updateInterval?: number){
-    this.l530.getDeviceInfo().then((sysInfo) => {
+  protected init(platform: TapoPlatform, updateInterval?: number){
+    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
       this.log.debug('SysInfo: ', sysInfo);
 
       // set accessory information
@@ -89,7 +70,7 @@ export class L530Accessory {
         .on('set', this.setColorTemp.bind(this))                // SET - bind to the `setColorTemp` method below
         .on('get', this.getColorTemp.bind(this))
         .setProps({
-          minValue: 154,
+          minValue: 140,
           maxValue: 400,
           minStep: 1,
         });              // GET - bind to the `getColorTemp` method below
@@ -128,7 +109,7 @@ export class L530Accessory {
         this.updateState(interval);
       }, interval);
     }).catch(() => {
-      if(!this.l530.is_klap){
+      if(!this.tpLinkAccessory.is_klap){
         this.setNoResponse();
         this.log.error('100 - Get Device Info failed');
       }
@@ -139,73 +120,12 @@ export class L530Accessory {
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l530.setPowerState(value as boolean).then((result) => {
-      if(result){
-        this.platform.log.debug('Set Characteristic On ->', value);
-        this.l530.getSysInfo().device_on = value as boolean;
-  
-        if (this.fakeGatoHistoryService) {
-          this.fakeGatoHistoryService.addEntry({
-            time: new Date().getTime() / 1000,
-            status: + value, 
-          });
-        }
-        // you must call the callback function
-        callback(null);
-      } else{
-        callback(new Error('unreachable'));
-      }
-    });
-  }
-
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getOn(callback: CharacteristicGetCallback) {
-    // implement your own code to check if the device is on
-    this.l530.getDeviceInfo().then((response) => {
-      if(response){
-        const isOn = response.device_on;
-
-        this.platform.log.debug('Get Characteristic On ->', isOn);
-  
-        if (this.fakeGatoHistoryService) {
-          this.fakeGatoHistoryService.addEntry({
-            time: new Date().getTime() / 1000,
-            status: + isOn, 
-          });
-        }
-  
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        if(isOn !== undefined){
-          callback(null, isOn);
-        } else{
-          callback(new Error('unreachable'), isOn);
-        }
-      } else{
-        callback(new Error('unreachable'), false);
-      }
-    }).catch(() => {
-      callback(new Error('unreachable'), false);
-    });
-  }
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory.
-   */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.l530.getSysInfo().device_on){
-      this.l530.setBrightness(value as number).then((result) => {
+    if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.tpLinkAccessory.setBrightness(value as number).then((result) => {
         if(result){
           this.platform.log.debug('Set Characteristic Brightness ->', value);
-          this.l530.getSysInfo().brightness = value as number;
+          this.tpLinkAccessory.getSysInfo().brightness = value as number;
   
           // you must call the callback function
           callback(null);
@@ -224,7 +144,7 @@ export class L530Accessory {
    * 
    */
   getBrightness(callback: CharacteristicGetCallback) {
-    this.l530.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo().then((response) => {
       if(response){
         const brightness = response.brightness;
         if(brightness !== undefined){
@@ -252,10 +172,10 @@ export class L530Accessory {
    */
   setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.log.debug('Color Temp Homekit :' + value);
-    if(this.l530.getSysInfo().device_on){
-      this.l530.setColorTemp(value as number).then((result) => {
+    if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.tpLinkAccessory.setColorTemp(value as number).then((result) => {
         if(result){
-          this.l530.getSysInfo().color_temp = value as number;
+          this.tpLinkAccessory.getSysInfo().color_temp = value as number;
           this.platform.log.debug('Set Characteristic Color Temperature ->', value);
     
           // you must call the callback function
@@ -276,7 +196,7 @@ export class L530Accessory {
    * 
    */
   getColorTemp(callback: CharacteristicGetCallback) {
-    this.l530.getColorTemp().then((response) => {
+    this.tpLinkAccessory.getColorTemp().then((response) => {
       if(response !== undefined){
         const color_temp = response;
 
@@ -300,12 +220,12 @@ export class L530Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setHue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.l530.getSysInfo().device_on){
-      this.l530.setColor(Math.round(value as number), this.l530.getSysInfo().saturation).then((result) => {
+    if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.tpLinkAccessory.setColor(Math.round(value as number), this.tpLinkAccessory.getSysInfo().saturation).then((result) => {
         if(result){
-          this.l530.getSysInfo().hue = Math.round(value as number);
+          this.tpLinkAccessory.getSysInfo().hue = Math.round(value as number);
           this.platform.log.debug('Set Characteristic Hue ->', Math.round(value as number));
-          this.platform.log.debug('With Characteristic Saturation ->', this.l530.getSysInfo().saturation);
+          this.platform.log.debug('With Characteristic Saturation ->', this.tpLinkAccessory.getSysInfo().saturation);
   
           // you must call the callback function
           callback(null);
@@ -324,7 +244,7 @@ export class L530Accessory {
    * 
    */
   getHue(callback: CharacteristicGetCallback) {
-    this.l530.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo().then((response) => {
       if(response){
         let hue = response.hue;
         this.platform.log.debug('Get Characteristic Hue ->', hue);
@@ -351,12 +271,12 @@ export class L530Accessory {
    * These are sent when the user changes the state of an accessory.
    */
   setSaturation(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.l530.getSysInfo().device_on){
-      this.l530.setColor(this.l530.getSysInfo().hue, Math.round(value as number)).then((result) => {
+    if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.tpLinkAccessory.setColor(this.tpLinkAccessory.getSysInfo().hue, Math.round(value as number)).then((result) => {
         if(result){
-          this.l530.getSysInfo().saturation = Math.round(value as number);
+          this.tpLinkAccessory.getSysInfo().saturation = Math.round(value as number);
           this.platform.log.debug('Set Characteristic Saturation ->', Math.round(value as number));
-          this.platform.log.debug('With Characteristic Hue ->', this.l530.getSysInfo().hue);
+          this.platform.log.debug('With Characteristic Hue ->', this.tpLinkAccessory.getSysInfo().hue);
   
           // you must call the callback function
           callback(null);
@@ -375,7 +295,7 @@ export class L530Accessory {
    * 
    */
   getSaturation(callback: CharacteristicGetCallback) {
-    this.l530.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo().then((response) => {
       if(response){
         let saturation = response.saturation;
 
@@ -398,7 +318,7 @@ export class L530Accessory {
   }
 
   private updateConsumption(){
-    this.l530.getEnergyUsage().then((response) => {
+    this.tpLinkAccessory.getEnergyUsage().then((response) => {
       if (response && response.power_usage) {
         if(this.lastMeasurement){
           this.platform.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
@@ -425,7 +345,7 @@ export class L530Accessory {
    *
    */
   getCurrentConsumption(callback: CharacteristicGetCallback) {
-    const consumption = this.l530.getPowerConsumption();
+    const consumption = this.tpLinkAccessory.getPowerConsumption();
 
     // you must call the callback function
     // the first argument should be null if there were no errors
@@ -440,7 +360,7 @@ export class L530Accessory {
    *
    */
   getTotalConsumption(callback: CharacteristicGetCallback) {
-    const consumption = this.l530.getPowerConsumption();
+    const consumption = this.tpLinkAccessory.getPowerConsumption();
 
     // you must call the callback function
     // the first argument should be null if there were no errors
@@ -467,8 +387,8 @@ export class L530Accessory {
     callback(null);
   }
 
-  private updateState(interval:number){
-    this.l530.getDeviceInfo().then((response) => {
+  protected updateState(interval:number){
+    this.tpLinkAccessory.getDeviceInfo().then((response) => {
       if(response){
         const isOn = response.device_on;
         const saturation = response.saturation;
@@ -492,7 +412,8 @@ export class L530Accessory {
           this.service.updateCharacteristic(this.platform.Characteristic.Hue, hue);
         }
         if(color_temp){
-          this.service.updateCharacteristic(this.platform.Characteristic.ColorTemperature, this.l530.calculateColorTemp(color_temp));
+          this.service.updateCharacteristic(this.platform.Characteristic.ColorTemperature, 
+            this.tpLinkAccessory.calculateColorTemp(color_temp));
         }
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
@@ -510,10 +431,5 @@ export class L530Accessory {
     });
 
    
-  }
-
-  private setNoResponse():void{
-    //@ts-ignore
-    this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }

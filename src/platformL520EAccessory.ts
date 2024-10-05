@@ -1,49 +1,30 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
+import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
 import TapoPlatform from './platform';
 import L520E from './utils/l520e';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
 
 /**
  * L510E Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class L520EAccessory {
-  private service: Service;
-
-  private l520e: L520E;
+export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
 
   constructor(
     public readonly log: Logger,
-    private readonly platform: TapoPlatform,
-    private readonly accessory: PlatformAccessory,
-    private readonly timeout: number,
-    private readonly updateInterval?: number,
+    protected readonly platform: TapoPlatform,
+    protected readonly accessory: PlatformAccessory,
+    protected readonly timeout: number,
+    protected readonly updateInterval?: number,
   ) {
-    this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    this.l520e = new L520E(this.log, accessory.context.device.host, platform.config.username, platform.config.password, this.timeout);
 
-    this.l520e.handshake().then(() => {
-      if(this.l520e.is_klap){
-        this.l520e.handshake_new().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('KLAP Handshake failed');
-          this.l520e.is_klap = false;
-        });
-      } else{
-        this.l520e.login().then(() => {
-          this.init(platform, updateInterval);
-        }).catch(() => {
-          this.setNoResponse();
-          this.log.error('Login failed');
-        });
-      }
-    }).catch(() => {
-      this.setNoResponse();
-      this.log.error('Handshake failed');
-    });
+    super(log, platform, accessory, timeout, updateInterval);
+
+    this.tpLinkAccessory = new L520E(this.log, accessory.context.device.host, platform.config.username, platform.config.password, 
+      this.timeout);
     
+    this.initialise(platform, updateInterval);
+
     // get the Outlet service if it exists, otherwise create a new Outlet service
     this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
 
@@ -52,8 +33,8 @@ export class L520EAccessory {
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
   }
 
-  private init(platform: TapoPlatform, updateInterval?: number){
-    this.l520e.getDeviceInfo().then((sysInfo) => {
+  protected init(platform: TapoPlatform, updateInterval?: number){
+    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
       // set accessory information
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
@@ -98,59 +79,12 @@ export class L520EAccessory {
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.l520e.setPowerState(value as boolean).then((result) => {
-      if(result){
-        this.platform.log.debug('Set Characteristic On ->', value);
-        this.l520e.getSysInfo().device_on = value as boolean;
-        // you must call the callback function
-        callback(null);
-      } else{
-        callback(new Error('unreachable'), false);
-      }
-    });
-  }
-
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getOn(callback: CharacteristicGetCallback) {
-    // implement your own code to check if the device is on
-    this.l520e.getDeviceInfo().then((response) => {
-      if(response){
-        const isOn = response.device_on;
-
-        this.platform.log.debug('Get Characteristic On ->', isOn);
-  
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        if(isOn !== undefined){
-          callback(null, isOn);
-        } else{
-          callback(new Error('unreachable'), isOn);
-        }
-      } else{
-        callback(new Error('unreachable'), false);
-      }
-    }).catch(() => {
-      callback(new Error('unreachable'), false);
-    });
-  }
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory.
-   */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.l520e.getSysInfo().device_on){
-      this.l520e.setBrightness(value as number).then((result) => {
+    if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.tpLinkAccessory.setBrightness(value as number).then((result) => {
         if(result){
           this.platform.log.debug('Set Characteristic Brightness ->', value);
-          this.l520e.getSysInfo().brightness = value as number;
+          this.tpLinkAccessory.getSysInfo().brightness = value as number;
   
           // you must call the callback function
           callback(null);
@@ -169,7 +103,7 @@ export class L520EAccessory {
    * 
    */
   getBrightness(callback: CharacteristicGetCallback) {
-    this.l520e.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo().then((response) => {
       if(response){
         const brightness = response.brightness;
 
@@ -192,8 +126,8 @@ export class L520EAccessory {
     });
   }
 
-  private updateState(interval:number){
-    this.l520e.getDeviceInfo().then((response) => {
+  protected updateState(interval:number){
+    this.tpLinkAccessory.getDeviceInfo().then((response) => {
       if(response){
         const isOn = response.device_on;
         const brightness = response.brightness;
@@ -232,10 +166,10 @@ export class L520EAccessory {
    */
   setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.log.debug('Color Temp Homekit :' + value);
-    if(this.l520e.getSysInfo().device_on){
-      this.l520e.setColorTemp(value as number).then((result) => {
+    if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.tpLinkAccessory.setColorTemp(value as number).then((result) => {
         if(result){
-          this.l520e.getSysInfo().color_temp = value as number;
+          this.tpLinkAccessory.getSysInfo().color_temp = value as number;
           this.platform.log.debug('Set Characteristic Color Temperature ->', value);
     
           // you must call the callback function
@@ -256,7 +190,7 @@ export class L520EAccessory {
    * 
    */
   getColorTemp(callback: CharacteristicGetCallback) {
-    this.l520e.getColorTemp().then((response) => {
+    this.tpLinkAccessory.getColorTemp().then((response) => {
       if(response !== undefined){
         const color_temp = response;
 
@@ -273,10 +207,5 @@ export class L520EAccessory {
     }).catch(() => {
       callback(new Error('unreachable'), 0);
     });
-  }
-
-  private setNoResponse():void{
-    //@ts-ignore
-    this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }
