@@ -1,6 +1,6 @@
 import { Logger } from 'homebridge';
-import { ColorTempLightSysinfo } from '../homekit-device/types';
-import L510E from './l510e';
+import { ColorTempLightSysinfo } from '../homekit-device/types.js';
+import L510E from './l510e.js';
 
 export default class L520E extends L510E {
 

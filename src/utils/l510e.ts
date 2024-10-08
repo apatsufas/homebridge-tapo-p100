@@ -1,6 +1,6 @@
 import { Logger } from 'homebridge';
-import { LightSysinfo } from '../homekit-device/types';
-import P100 from './p100';
+import { LightSysinfo } from '../homekit-device/types.js';
+import P100 from './p100.js';
 
 export default class L510E extends P100 {
 

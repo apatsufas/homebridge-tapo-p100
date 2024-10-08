@@ -1,7 +1,7 @@
 import { Logger } from 'homebridge';
-import { ColorLightSysinfo, ConsumptionInfo } from '../homekit-device/types';
-import L520E from './l520e';
-import { PowerUsage } from './powerUsage';
+import { ColorLightSysinfo, ConsumptionInfo } from '../homekit-device/types.js';
+import L520E from './l520e.js';
+import { PowerUsage } from './powerUsage.js';
 
 export default class L530 extends L520E {
 

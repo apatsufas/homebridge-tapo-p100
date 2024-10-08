@@ -3,9 +3,9 @@ import type {
   WithUUID,
 } from 'homebridge';
 
-import DefaultCharacteristicImport from './default-characteristic';
-import CurrentConsumptionCharacteristicImport from './currentConsumptionCharacteristic';
-import TotalConsumptionCharacteristicImport from './totalConsumptionCharacteristic';
+import DefaultCharacteristicImport from './default-characteristic.js';
+import CurrentConsumptionCharacteristicImport from './currentConsumptionCharacteristic.js';
+import TotalConsumptionCharacteristicImport from './totalConsumptionCharacteristic.js';
 
 export default function characteristic(
   Characteristic: typeof CharacteristicClass,

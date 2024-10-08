@@ -1,8 +1,8 @@
 import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
   AdaptiveLightingController } from 'homebridge';
-import TapoPlatform from './platform';
-import L530 from './utils/l530';
-import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
+import type { TapoPlatform } from './platform.js';
+import L530 from './utils/l530.js';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
 
 /**
  * L530 Accessory

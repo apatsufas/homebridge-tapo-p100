@@ -1,8 +1,8 @@
 import { PlatformAccessory, CharacteristicValue, CharacteristicGetCallback, 
   Logger } from 'homebridge';
-import TapoPlatform from './platform';
-import P110 from './utils/p110';
-import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
+import type { TapoPlatform } from './platform.js';
+import P110 from './utils/p110.js';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
 
 /**
  * P110 Accessory
