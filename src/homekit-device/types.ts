@@ -19,8 +19,11 @@ export type LightSysinfo = PlugSysinfo &{
     brightness: number;
   };
 
-export type ColorLightSysinfo = LightSysinfo &{ 
+export type ColorTempLightSysinfo = LightSysinfo &{ 
     color_temp: number;
+  };
+  
+export type ColorLightSysinfo = ColorTempLightSysinfo &{ 
     hue: number;
     saturation: number;
   };

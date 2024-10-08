@@ -1,4 +1,4 @@
-import { Usage } from "./usage";
+import { Usage } from './usage';
 
 export class PowerUsage{
     time_usage!:Usage;
