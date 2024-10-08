@@ -37,12 +37,11 @@
     "tp-link"
   ],
   "dependencies": {
-    "axios": "^0.21.1",
-    "fakegato-history": "^0.6.2",
+    "axios": "^1.7.7",
+    "fakegato-history": "^0.6.5",
     "lodash.defaults": "^4.2.0",
-    "node-cron": "^3.0.3",
     "utf8": "^3.0.0",
-    "uuid": "8.3.2"
+    "uuid": "10.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

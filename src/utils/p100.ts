@@ -171,7 +171,9 @@ export default class P100 implements TpLinkAccessory{
         try {
           const encryptedKey = res.data.result.key.toString('utf8');
           this.decode_handshake_key(encryptedKey);
-          this.cookie = res.headers['set-cookie'][0].split(';')[0];
+          if(res.headers['set-cookie']){
+            this.cookie = res.headers['set-cookie'][0].split(';')[0];
+          }
           return;
         } catch (error) {
           return this.handleError(res.data.error_code, '106');
