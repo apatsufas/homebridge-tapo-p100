@@ -43,7 +43,7 @@ export default class L520E extends L510E {
     return this.sendRequest(payload);
   }
 
-  private transformColorTemp(value: number){
+  private transformColorTemp(value: number):number{
     return Math.floor(1000000 / value);
   }
 
@@ -53,7 +53,7 @@ export default class L520E extends L510E {
     });
   }
 
-  calculateColorTemp(tapo_color_temp:number){
+  calculateColorTemp(tapo_color_temp:number):number{
     const newValue = this.transformColorTemp(tapo_color_temp);
     return newValue > 400 ? 400 : (newValue < 154 ? 154 : newValue);
   }

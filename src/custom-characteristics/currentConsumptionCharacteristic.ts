@@ -1,4 +1,4 @@
-import {Characteristic, WithUUID} from 'homebridge';
+import { Characteristic, WithUUID } from 'homebridge';
 
 export default function currentConsumption(
   DefaultCharacteristic: typeof Characteristic,

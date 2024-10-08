@@ -7,8 +7,6 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
   protected tpLinkAccessory!: T;
   protected service!: Service;
 
-  private cron = require('node-cron');
-
   constructor(
     public readonly log: Logger,
     protected readonly platform: TapoPlatform,
@@ -45,7 +43,7 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
     });
   }
 
-  protected abstract init(platform: TapoPlatform, updateInterval?: number);
+  protected abstract init(platform: TapoPlatform, updateInterval?: number):void;
 
   /**
    * Handle "SET" requests from HomeKit
@@ -126,7 +124,6 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
   }
 
   protected setNoResponse():void{
-    //@ts-ignore
     this.service.updateCharacteristic(this.platform.Characteristic.On, new Error('unreachable'));
   }
 }

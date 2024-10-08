@@ -31,7 +31,7 @@ export interface TpLinkAccessory{
 
     getColorTemp?(): Promise<number>;
 
-    calculateColorTemp?(tapo_color_temp:number);
+    calculateColorTemp?(tapo_color_temp:number):number;
 
     setColor?(hue:number, saturation:number):Promise<boolean>;
 }

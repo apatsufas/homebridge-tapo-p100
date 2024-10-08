@@ -15,6 +15,8 @@ import { P100Accessory } from './platformP100Accessory';
 import { parseConfig, TapoConfig } from './config';
 import { L510EAccessory } from './platformL510EAccessory';
 import { L530Accessory } from './platformL530Accessory';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//@ts-ignore
 import fakegato from 'fakegato-history';
 import { P110Accessory } from './platformP110Accessory';
 import Characteristics from './custom-characteristics';
@@ -26,8 +28,8 @@ import { L520EAccessory } from './platformL520EAccessory';
  * parse the user config and discover/register accessories with Homebridge.
  */
 export default class TapoPlatform implements DynamicPlatformPlugin {
-  public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
   public readonly FakeGatoHistoryService;
 
   // this is used to track restored cached accessories
@@ -44,6 +46,9 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
     config: PlatformConfig,
     public readonly api: API,
   ) {
+    this.Service = api.hap.Service;
+    this.Characteristic = api.hap.Characteristic;
+    
     this.log.debug('config.json: %j', config);
     this.config = parseConfig(config);
     this.log.debug('config: %j', this.config);

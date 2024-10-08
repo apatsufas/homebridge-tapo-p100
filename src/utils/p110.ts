@@ -1,7 +1,7 @@
 import { Logger } from 'homebridge';
 import { EnergyUsage } from './energyUsage';
 import P100 from './p100';
-import {ConsumptionInfo} from '../homekit-device/types';
+import { ConsumptionInfo } from '../homekit-device/types';
 
 export default class P110 extends P100 {
 

@@ -1,4 +1,4 @@
-import {Characteristic, Units, Formats, WithUUID, Perms} from 'homebridge';
+import { Characteristic, Units, Formats, WithUUID, Perms } from 'homebridge';
 
 export default function resetConsumption(
   DefaultCharacteristic: typeof Characteristic,

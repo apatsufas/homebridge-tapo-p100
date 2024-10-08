@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { Logger } from 'homebridge';
 import { PlugSysinfo } from '../homekit-device/types';
 import TpLinkCipher from './tpLinkCipher';
@@ -247,7 +249,9 @@ export default class P100 implements TpLinkAccessory{
     };
 
     if (this.cookie) {
-      headers['Cookie'] = this.cookie;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-ignore
+      headers.Cookie = this.cookie;
     }
 
     const config = {
@@ -315,7 +319,7 @@ export default class P100 implements TpLinkAccessory{
       const req = this.crypto.createHash('sha256').update(Buffer.concat([remote_seed, local_seed, auth_hash])).digest();
 
       return this.raw_request('handshake2', req, 'text').then((res) => {
-        this.log.debug('Handshake 2 successful');
+        this.log.debug('Handshake 2 successful: ' + res);
 
         this.newTpLinkCipher = new NewTpLinkCipher(local_seed, remote_seed, auth_hash, this.log);
         this.log.debug('Init cipher successful');
@@ -390,9 +394,11 @@ export default class P100 implements TpLinkAccessory{
       };
 
       return this.axios.post(URL, securePassthroughPayload, config)
-        .then((res) => {
+        .then((res:any) => {
           if (res.data.error_code) {
             if ((res.data.error_code === '9999' || res.data.error_code === 9999) && this._reconnect_counter <= 3) {
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              //@ts-ignore
               this.log.error(' Error Code: ' + res.data.error_code + ', ' + this.ERROR_CODES[res.data.error_code]);
               this.log.debug('Trying to reconnect...');
               return this.reconnect().then(() => {
@@ -433,7 +439,9 @@ export default class P100 implements TpLinkAccessory{
       };
 
       if (this.cookie) {
-        headers['Cookie'] = this.cookie;
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        //@ts-ignore
+        headers.Cookie = this.cookie;
       }
 
       const config = {
@@ -509,7 +517,7 @@ export default class P100 implements TpLinkAccessory{
 
   get serialNumber(): string {
     if (this.getSysInfo()) {
-      this.getSysInfo().hw_id;
+      return this.getSysInfo().hw_id;
     }
     return '';
   }
@@ -538,6 +546,8 @@ export default class P100 implements TpLinkAccessory{
   }
 
   protected handleError(errorCode: number | string, line: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
     const errorMessage = this.ERROR_CODES[errorCode];
     this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
     if (typeof errorCode === 'number' && errorCode === 1003) {
@@ -605,6 +615,8 @@ export default class P100 implements TpLinkAccessory{
         .then((res: AxiosResponse) => {
           if (res.data.error_code) {
             if (res.data.error_code === '9999' || res.data.error_code === 9999 && this._reconnect_counter <= 3) {
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              //@ts-ignore
               this.log.error(' Error Code: ' + res.data.error_code + ', ' + this.ERROR_CODES[res.data.error_code]);
               this.log.debug('Trying to reconnect...');
               return this.reconnect().then(() => {

@@ -1,3 +1,3 @@
 export class EnergyUsage{
-    current_power!: number;
+  current_power!: number;
 }

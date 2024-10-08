@@ -1,5 +1,5 @@
 import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
-  AdaptiveLightingController} from 'homebridge';
+  AdaptiveLightingController } from 'homebridge';
 import TapoPlatform from './platform';
 import L530 from './utils/l530';
 import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';

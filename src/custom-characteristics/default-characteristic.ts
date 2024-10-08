@@ -2,7 +2,6 @@ import type {
   Characteristic as CharacteristicClass,
   CharacteristicProps,
 } from 'homebridge';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { Formats, Perms } from 'homebridge'; // enum
 import type { MarkOptional } from 'ts-essentials';
 

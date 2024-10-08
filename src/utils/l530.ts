@@ -1,5 +1,5 @@
 import { Logger } from 'homebridge';
-import {ColorLightSysinfo, ConsumptionInfo} from '../homekit-device/types';
+import { ColorLightSysinfo, ConsumptionInfo } from '../homekit-device/types';
 import L520E from './l520e';
 import { PowerUsage } from './powerUsage';
 
