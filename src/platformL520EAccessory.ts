@@ -34,7 +34,7 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
   }
 
   protected init(platform: TapoPlatform, updateInterval?: number){
-    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
+    this.tpLinkAccessory.getDeviceInfo(true).then((sysInfo) => {
       // set accessory information
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
@@ -65,7 +65,7 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
         });              // GET - bind to the `getColorTemp` method below
 
       
-      const interval = updateInterval ? updateInterval*1000 : 30000;
+      const interval = updateInterval ? updateInterval*1000 : 10000;
       setTimeout(()=>{
         this.updateState(interval);
       }, interval);
@@ -127,7 +127,7 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
   }
 
   protected updateState(interval:number){
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo(true).then((response) => {
       if(response){
         const isOn = response.device_on;
         const brightness = response.brightness;

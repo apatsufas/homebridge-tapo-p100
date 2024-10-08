@@ -23,8 +23,8 @@ export default class L530 extends L520E {
     };
   }
 
-  async getDeviceInfo(): Promise<ColorLightSysinfo>{
-    return super.getDeviceInfo().then(() => {
+  async getDeviceInfo(force?:boolean): Promise<ColorLightSysinfo>{
+    return super.getDeviceInfo(force).then(() => {
       return this.getSysInfo();
     });
   }
@@ -36,6 +36,7 @@ export default class L530 extends L520E {
     if(!saturation){
       saturation = 0;
     }
+    this.log.debug('Setting color: ' + hue + ', ' + saturation);
     const payload = '{'+
               '"method": "set_device_info",'+
               '"params": {'+
@@ -63,30 +64,64 @@ export default class L530 extends L520E {
                 '"method": "get_device_usage",'+
                     '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                     '};';
-    return this.handleRequest(payload).then((response)=>{
-      if(response && response.result){
-        this._consumption = {
-          total: response.result.power_usage.today / 1000,
-          current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
-        };
-      } else{
-        this._consumption = {
-          total: 0,
-          current: 0,
-        };
-      }
-      
-      return response.result;
-    }).catch((error)=>{
-      if(error.message.indexOf('9999') > 0){
-        return this.reconnect().then(()=>{
-          return this.handleRequest(payload).then(()=>{
-            return true;
+    this.log.debug('getEnergyUsage called');
+
+    if(this.is_klap){
+      this.log.debug('getEnergyUsage is klap');
+
+      return this.handleKlapRequest(payload).then((response)=>{
+        this.log.debug('Consumption: ' + JSON.stringify(response));
+        if(response && response.result){
+          this._consumption = {
+            total: response.result.power_usage.today / 1000,
+            current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+          };
+        } else{
+          this._consumption = {
+            total: 0,
+            current: 0,
+          };
+        }
+                        
+        return response.result;
+      }).catch((error)=>{
+        if(error.message.indexOf('9999') > 0){
+          return this.reconnect().then(()=>{
+            return this.handleKlapRequest(payload).then(()=>{
+              return true;
+            });
           });
-        });
-      }
-      return false;
-    });
+        }
+        return false;
+      });
+    }else{
+      return this.handleRequest(payload).then((response)=>{
+        this.log.debug('Consumption: ' + response);
+        if(response && response.result){
+          this._consumption = {
+            total: response.result.power_usage.today / 1000,
+            current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+          };
+        } else{
+          this._consumption = {
+            total: 0,
+            current: 0,
+          };
+        }
+                        
+        return response.result;
+      }).catch((error)=>{
+        if(error.message.indexOf('9999') > 0){
+          return this.reconnect().then(()=>{
+            return this.handleRequest(payload).then(()=>{
+              return true;
+            });
+          });
+        }
+        return false;
+      });
+    }
+    
   }
 
   public getPowerConsumption():ConsumptionInfo{

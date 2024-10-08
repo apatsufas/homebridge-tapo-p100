@@ -57,7 +57,7 @@ Example:
                 "name": "Kitchen",
                 "host": "192.168.1.21",
                 "type": "Plug",
-                "updateInterval": 30,
+                "updateInterval": 10,
                 "timeout": 2
             }
         ]
@@ -105,7 +105,7 @@ Example response from this endpoint:
 "rssi":-61,
 "region":"Europe/Athens",
 "time_diff":120,
-"lang":"en_US"}}
+"lang":"en_US"}
 ```
 
 ## Information

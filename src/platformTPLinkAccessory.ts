@@ -17,15 +17,6 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
     protected readonly updateInterval?: number,
   ) {
     this.log.debug('Start adding accessory: ' + accessory.context.device.host);
-    
-
-    this.cron.schedule('*/10 * * * *', () => {
-      this.initialise(platform, updateInterval);
-    });
-
-    /*this.cron.schedule('0 0 * * *', () => {
-      this.initialise(platform, updateInterval);
-    });*/
   }
 
   protected initialise(platform: TapoPlatform, updateInterval?: number):void{
@@ -98,14 +89,16 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
       } else{
         callback(new Error('unreachable'), false);
       }
-    }).catch(() => {
-      callback(new Error('unreachable'), false);
+    }).catch((error) => {
+      this.log.debug('error: ' + error);
+
+      callback(new Error('unreachable'), 0);
     });
   }
 
   protected updateState(interval:number){
     this.platform.log.debug('Updating state');
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo(true).then((response) => {
       if(response){
         const isOn = response.device_on;
 

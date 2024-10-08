@@ -317,7 +317,7 @@ export default class P100 implements TpLinkAccessory{
       return this.raw_request('handshake2', req, 'text').then((res) => {
         this.log.debug('Handshake 2 successful');
 
-        this.newTpLinkCipher = new NewTpLinkCipher(local_seed, remote_seed, auth_hash);
+        this.newTpLinkCipher = new NewTpLinkCipher(local_seed, remote_seed, auth_hash, this.log);
         this.log.debug('Init cipher successful');
 
         return;
@@ -358,8 +358,8 @@ export default class P100 implements TpLinkAccessory{
     }
   }
 
-  async getDeviceInfo(): Promise<PlugSysinfo> {
-    if (this.getSysInfo() && (Date.now() - this.getSysInfo().last_update) < 2000) {
+  async getDeviceInfo(force?:boolean): Promise<PlugSysinfo> {
+    if (!force) {
       return new Promise((resolve) => {
         resolve(this.getSysInfo());
       });
@@ -562,12 +562,12 @@ export default class P100 implements TpLinkAccessory{
         return false;
       });
     } else {
-      return this.newHandleRequest(payload).then((result) => {
+      return this.handleKlapRequest(payload).then((result) => {
         return result ? true : false;
       }).catch((error) => {
         if (error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
           return this.newReconnect().then(() => {
-            return this.newHandleRequest(payload).then((result) => {
+            return this.handleKlapRequest(payload).then((result) => {
               return result ? true : false;
             });
           });
@@ -576,22 +576,6 @@ export default class P100 implements TpLinkAccessory{
         return false;
       });
     }
-  }
-
-  protected async newSendRequest(payload: string): Promise<boolean> {
-    return this.handleRequest(payload).then((result) => {
-      return result ? true : false;
-    }).catch((error) => {
-      if (error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
-        return this.reconnect().then(() => {
-          return this.handleRequest(payload).then((result) => {
-            return result ? true : false;
-          });
-        });
-      }
-      this._reconnect_counter = 0;
-      return false;
-    });
   }
 
   protected handleRequest(payload: string): Promise<any> {
@@ -652,7 +636,7 @@ export default class P100 implements TpLinkAccessory{
     });
   }
 
-  protected newHandleRequest(payload: string): Promise<any> {
+  protected handleKlapRequest(payload: string): Promise<any> {
     if (this.newTpLinkCipher) {
       const data = this.newTpLinkCipher.encrypt(payload);
 

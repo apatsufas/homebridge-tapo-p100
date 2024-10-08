@@ -34,7 +34,7 @@ export class L510EAccessory extends TPLinkPlatformAccessory<L510E> {
   }
 
   protected init(platform: TapoPlatform, updateInterval?: number){
-    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
+    this.tpLinkAccessory.getDeviceInfo(true).then((sysInfo) => {
       // set accessory information
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
@@ -54,7 +54,7 @@ export class L510EAccessory extends TPLinkPlatformAccessory<L510E> {
         .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
         .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
 
-      const interval = updateInterval ? updateInterval*1000 : 30000;
+      const interval = updateInterval ? updateInterval*1000 : 10000;
       setTimeout(()=>{
         this.updateState(interval);
       }, interval);
@@ -116,7 +116,7 @@ export class L510EAccessory extends TPLinkPlatformAccessory<L510E> {
   }
 
   protected updateState(interval:number){
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
+    this.tpLinkAccessory.getDeviceInfo(true).then((response) => {
       if(response){
         const isOn = response.device_on;
         const brightness = response.brightness;

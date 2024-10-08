@@ -1,3 +1,6 @@
+import { Logger } from "homebridge";
+import { TextDecoder } from "util";
+
 export default class NewTpLinkCipher{
     public iv: any; 
     public key: any; 
@@ -5,7 +8,7 @@ export default class NewTpLinkCipher{
     public sig: any;
     public seq: any;
 
-    constructor(localSeed: Buffer, remoteSeed: Buffer, authHash: Buffer | undefined) {
+    constructor(localSeed: Buffer, remoteSeed: Buffer, authHash: Buffer | undefined, public readonly log: Logger) {
       if(authHash){
         this.calculateKey(localSeed, remoteSeed, authHash);
         this.calculateIvSeq(localSeed, remoteSeed, authHash);
@@ -47,8 +50,24 @@ export default class NewTpLinkCipher{
         decipher.update(data.subarray(32)),
         decipher.final(),
       ]);
-  
-      return decrypted.toString('utf8');
+ 
+      const dec = decrypted.toString('utf8');
+      this.log.debug('decrypted: ' + dec);
+
+      //Some times the json returned is malformed, or the number returned in error_code 
+      //is not valid e.g. -0301, so we need to use regex to replace the malformed/invalid json parts
+      let dec_fixed = '';
+      if(dec.match(/{"error_code":([-0-9]+)[^,}]$/)){
+        dec_fixed = dec.replace(/{"error_code":([-0-9]+)[^,}]/gm, '{"error_code":"$1"}');
+      } else if(dec.match(/{"error_code":([-0-9]+)}$/)){
+        dec_fixed = dec.replace(/{"error_code":([-0-9]+)}$/gm, '{"error_code":"$1"}');
+      } else{
+        dec_fixed = dec.replace(/{"error_code":([-0-9]+)[^,}](.*)/gm, '{"error_code":"$1",$2');
+      }
+      
+      this.log.debug('decrypted fixed: ' + dec_fixed);
+    
+      return dec_fixed;
     }
   
     private calculateKey(local_seed: Buffer, remote_seed: Buffer, auth_hash: Buffer) {

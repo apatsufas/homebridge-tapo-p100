@@ -43,7 +43,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   }
 
   protected init(platform: TapoPlatform, updateInterval?: number){
-    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
+    this.log.debug('init called');
+
+    this.tpLinkAccessory.getDeviceInfo(true).then((sysInfo) => {
       this.log.debug('SysInfo: ', sysInfo);
 
       // set accessory information
@@ -84,18 +86,10 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
       this.service.getCharacteristic(this.platform.Characteristic.Saturation)
         .on('set', this.setSaturation.bind(this))                // SET - bind to the `setSaturation` method below
         .on('get', this.getSaturation.bind(this));               // GET - bind to the `getSaturation` method below
-
-      this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
-        .on('get', this.getCurrentConsumption.bind(this));
-
-      this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
-        .on('get', this.getTotalConsumption.bind(this));
-
-      this.service.getCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic)
-        .on('set', this.resetConsumption.bind(this));
         
       // Setup the adaptive lighting controller if available
       if (this.platform.api.versionGreaterOrEqual && this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')) {
+        this.log.debug('Enabling Adaptvie Lightning');
         this.adaptiveLightingController = new platform.api.hap.AdaptiveLightingController(
           this.service,
         );
@@ -104,7 +98,7 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
 
       this.updateConsumption();
 
-      const interval = updateInterval ? updateInterval*1000 : 30000;
+      const interval = updateInterval ? updateInterval*1000 : 10000;
       setTimeout(()=>{
         this.updateState(interval);
       }, interval);
@@ -145,6 +139,7 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
    */
   getBrightness(callback: CharacteristicGetCallback) {
     this.tpLinkAccessory.getDeviceInfo().then((response) => {
+      this.log.debug('getBritness: ' + JSON.stringify(response));
       if(response){
         const brightness = response.brightness;
         if(brightness !== undefined){
@@ -156,12 +151,15 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
           // you must call the callback function
           callback(null, brightness);
         }else{
+          this.log.debug('getBritness: ' + 167);
           callback(new Error('unreachable'), 0);
         }
       } else{
+        this.log.debug('getBritness: ' + 171);
         callback(new Error('unreachable'), 0);
       }
     }).catch(() => {
+      this.log.debug('getBritness: ' + 175);
       callback(new Error('unreachable'), 0);
     });
   }
@@ -197,6 +195,8 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
    */
   getColorTemp(callback: CharacteristicGetCallback) {
     this.tpLinkAccessory.getColorTemp().then((response) => {
+      this.log.debug('getColorTemp: ' + JSON.stringify(response));
+
       if(response !== undefined){
         const color_temp = response;
 
@@ -208,9 +208,14 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         // you must call the callback function
         callback(null, color_temp);
       }else{
+        this.log.debug('getColorTemp: ' + 224);
+
         callback(new Error('unreachable'), 0);
       }
-    }).catch(() => {
+    }).catch((error) => {
+      this.log.debug('getColorTemp: ' + 229);
+      this.log.debug('error: ' + error);
+
       callback(new Error('unreachable'), 0);
     });
   }
@@ -221,6 +226,7 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
    */
   setHue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.log.debug('Homekit Hue: ' + value);
       this.tpLinkAccessory.setColor(Math.round(value as number), this.tpLinkAccessory.getSysInfo().saturation).then((result) => {
         if(result){
           this.tpLinkAccessory.getSysInfo().hue = Math.round(value as number);
@@ -245,6 +251,8 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
    */
   getHue(callback: CharacteristicGetCallback) {
     this.tpLinkAccessory.getDeviceInfo().then((response) => {
+      this.log.debug('getHue: ' + JSON.stringify(response));
+
       if(response){
         let hue = response.hue;
         this.platform.log.debug('Get Characteristic Hue ->', hue);
@@ -259,9 +267,15 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         // you must call the callback function
         callback(null, hue);
       } else{
+        this.log.debug('getHue: ' + 282);
+
         callback(new Error('unreachable'), 0);
       }
-    }).catch(() => {
+    }).catch((error) => {
+      this.log.debug('Unreachable');
+      this.log.debug('getHue: ' + 288);
+      this.log.debug('error: ' + error);
+
       callback(new Error('unreachable'), 0);
     });
   }
@@ -272,6 +286,7 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
    */
   setSaturation(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     if(this.tpLinkAccessory.getSysInfo().device_on){
+      this.log.debug('Homekit Saturation: ' + value);
       this.tpLinkAccessory.setColor(this.tpLinkAccessory.getSysInfo().hue, Math.round(value as number)).then((result) => {
         if(result){
           this.tpLinkAccessory.getSysInfo().saturation = Math.round(value as number);
@@ -296,6 +311,8 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
    */
   getSaturation(callback: CharacteristicGetCallback) {
     this.tpLinkAccessory.getDeviceInfo().then((response) => {
+      this.log.debug('getSaturation: ' + JSON.stringify(response));
+
       if(response){
         let saturation = response.saturation;
 
@@ -310,18 +327,25 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         // you must call the callback function
         callback(null, saturation);
       } else{
+        this.log.debug('getSaturation: ' + 341);
+
         callback(new Error('unreachable'), 0);
       }
-    }).catch(() => {
+    }).catch((error) => {
+      this.log.debug('getSaturation: ' + 346);
+      this.log.debug('error: ' + error);
+
       callback(new Error('unreachable'), 0);
     });
   }
 
   private updateConsumption(){
+    this.log.debug('updateConsumption called');
     this.tpLinkAccessory.getEnergyUsage().then((response) => {
+      this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
       if (response && response.power_usage) {
         if(this.lastMeasurement){
-          this.platform.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
+          this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
           if (this.fakeGatoHistoryService ) {
             this.fakeGatoHistoryService.addEntry({
               time: new Date().getTime() / 1000,
@@ -388,8 +412,10 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   }
 
   protected updateState(interval:number){
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
+    this.log.debug('updateState called');
+    this.tpLinkAccessory.getDeviceInfo(true).then((response) => {
       if(response){
+        this.log.info('Device Info: ' + JSON.stringify(response));
         const isOn = response.device_on;
         const saturation = response.saturation;
         const hue = response.hue;

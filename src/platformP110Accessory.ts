@@ -41,7 +41,7 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
   }
 
   protected init(platform: TapoPlatform, updateInterval?: number){
-    this.tpLinkAccessory.getDeviceInfo().then((sysInfo) => {
+    this.tpLinkAccessory.getDeviceInfo(true).then((sysInfo) => {
       // set accessory information
       this.accessory.getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(this.platform.Characteristic.Manufacturer, 'TP-Link')
@@ -56,18 +56,9 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
         .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
         .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
-      this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
-        .on('get', this.getCurrentConsumption.bind(this));
-
-      this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
-        .on('get', this.getTotalConsumption.bind(this));
-
-      this.service.getCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic)
-        .on('set', this.resetConsumption.bind(this));
-
       this.updateConsumption();
 
-      const interval = updateInterval ? updateInterval*1000 : 30000;
+      const interval = updateInterval ? updateInterval*1000 : 10000;
       setTimeout(()=>{
         this.updateState(interval);
       }, interval);

@@ -17,7 +17,7 @@ export interface TpLinkAccessory{
 
     setPowerState(state: boolean): Promise<boolean>;
 
-    getDeviceInfo(): Promise<PlugSysinfo> ;
+    getDeviceInfo(force?:boolean): Promise<PlugSysinfo> ;
 
     getSysInfo(): PlugSysinfo;
 
@@ -27,7 +27,7 @@ export interface TpLinkAccessory{
 
     setBrightness?(brightness:number):Promise<boolean>;
 
-    setColorTemp?(color_temp:number):Promise<true>;
+    setColorTemp?(color_temp:number):Promise<boolean>;
 
     getColorTemp?(): Promise<number>;
 

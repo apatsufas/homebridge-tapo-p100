@@ -17,13 +17,13 @@ export default class L520E extends L510E {
     this.log.debug('Constructing L510E on host: ' + ipAddress);
   }
 
-  async getDeviceInfo(): Promise<ColorTempLightSysinfo>{
-    return super.getDeviceInfo().then(() => {
+  async getDeviceInfo(force?:boolean): Promise<ColorTempLightSysinfo>{
+    return super.getDeviceInfo(force).then(() => {
       return this.getSysInfo();
     });
   }
 
-  async setColorTemp(color_temp:number):Promise<true>{
+  async setColorTemp(color_temp:number):Promise<boolean>{
     const transformedColorTemp = this.transformColorTemp(color_temp);
     this.log.debug('Color Temp Tapo :' + transformedColorTemp);
 
@@ -40,9 +40,7 @@ export default class L520E extends L510E {
                   '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
                   '};';
 
-    return this.handleRequest(payload).then(()=>{
-      return true;
-    });
+    return this.sendRequest(payload);
   }
 
   private transformColorTemp(value: number){
