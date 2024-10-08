@@ -255,7 +255,6 @@ export default class P100 implements TpLinkAccessory{
     };
 
     if (this.cookie) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       //@ts-ignore
       headers.Cookie = this.cookie;
     }
