@@ -125,6 +125,12 @@ export default class L530 extends L520E {
   }
 
   public getPowerConsumption():ConsumptionInfo{
+    if(!this.getSysInfo().device_on){
+      return {
+        total: this._consumption.total,
+        current: 0,
+      };
+    }
     return this._consumption;
   }
 
