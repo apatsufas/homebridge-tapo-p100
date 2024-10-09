@@ -24,6 +24,7 @@ export default class P100 implements TpLinkAccessory{
   private publicKey!: string;
   protected ip: string;
   protected cookie!: string;
+  protected tplink_timeout!: number;
   protected token!: string;
   protected terminalUUID: string;
   private _plugSysInfo!: PlugSysinfo;
@@ -168,8 +169,8 @@ export default class P100 implements TpLinkAccessory{
       .then((res: AxiosResponse) => {
         this.log.debug('Received Handshake P100 on host response: ' + this.ip);
 
-        if (res.data.error_code) {
-          return this.handleError(res.data.error_code, '97');
+        if (res.data.error_code || res.status !== 200) {
+          return this.handleError(res.data!.error_code ? res.data.error_code : res.status, '172');
         }
 
         try {
@@ -222,8 +223,8 @@ export default class P100 implements TpLinkAccessory{
 
       await this._axios.post(URL, securePassthroughPayload, config)
         .then((res: AxiosResponse) => {
-          if (res.data.error_code) {
-            return this.handleError(res.data.error_code, '146');
+          if (res.data.error_code || res.status !== 200) {
+            return this.handleError(res.data!.error_code ? res.data.error_code : res.status, '226');
           }
           const decryptedResponse = this.tpLinkCipher.decrypt(res.data.result.response);
           try {
@@ -269,13 +270,15 @@ export default class P100 implements TpLinkAccessory{
     return this._axios.post(URL, data, config)
       .then((res: AxiosResponse) => {
         this.log.debug('Received request on host response: ' + this.ip);
-        if (res.data.error_code) {
-          return this.handleError(res.data.error_code, '309');
+        if (res.data.error_code || res.status !== 200) {
+          return this.handleError(res.data!.error_code ? res.data.error_code : res.status, '273');
         }
 
         try {
           if (res.headers && res.headers['set-cookie']) {
+            this.log.debug('Handshake 1 cookie: ' + JSON.stringify(res.headers['set-cookie'][0]));
             this.cookie = res.headers['set-cookie'][0].split(';')[0];
+            this.tplink_timeout = Number(res.headers['set-cookie'][0].split(';')[1]);
           }
           return res.data;
         } catch (error) {
@@ -477,11 +480,16 @@ export default class P100 implements TpLinkAccessory{
             return this.getSysInfo();
           } catch (error) {
             this.log.debug(this.newTpLinkCipher.decrypt(res.data));
+            this.log.debug('Status: ' + res.status);
             return this.handleError(res.data.error_code, '480');
           }
         })
         .catch((error: Error) => {
+          this.log.debug('469 Error: ' + JSON.stringify(error));
           this.log.error('469 Error: ' + error.message);
+          if(error.message.indexOf('403') > -1){
+            this.reAuthenticate();
+          }
           return error;
         });
 
@@ -553,9 +561,11 @@ export default class P100 implements TpLinkAccessory{
   protected handleError(errorCode: number | string, line: string): boolean {
     //@ts-ignore
     const errorMessage = this.ERROR_CODES[errorCode];
-    this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
     if (typeof errorCode === 'number' && errorCode === 1003) {
+      this.log.info('Trying KLAP Auth');
       this.is_klap = true;
+    } else{
+      this.log.error(line + ' Error Code: ' + errorCode + ', ' + errorMessage + ' ' + this.ip);
     }
     return false;
   }
@@ -643,7 +653,7 @@ export default class P100 implements TpLinkAccessory{
           }
         })
         .catch((error: Error) => {
-          return this.handleError(error.message, '372');
+          return this.handleError(error.message, '656');
         });
     }
     return new Promise<true>((resolve, reject) => {
@@ -658,7 +668,7 @@ export default class P100 implements TpLinkAccessory{
       return this.raw_request('request', data.encryptedPayload, 'arraybuffer', { seq: data.seq.toString() }).then((res) => {
         return JSON.parse(this.newTpLinkCipher.decrypt(res));
       }).catch((error: Error) => {
-        return this.handleError(error.message, '372');
+        return this.handleError(error.message, '671');
       });
     }
     return new Promise<true>((resolve, reject) => {
@@ -681,5 +691,24 @@ export default class P100 implements TpLinkAccessory{
     return this.handshake_new().then(() => {
       return;
     });
+  }
+
+  private reAuthenticate():void{
+    if(this.is_klap){
+      this.handshake_new().then(() => {
+        this.log.info('KLAP Authenticated successfully');
+      }).catch(() => {
+        this.log.error('KLAP Handshake failed');
+        this.is_klap = false;
+      });
+    } else {
+      this.handshake().then(() => {
+        this.login().then(() => {
+          this.log.info('Authenticated successfully');
+        }).catch(() => {
+          this.log.error('Login failed');
+        });
+      });
+    }
   }
 }

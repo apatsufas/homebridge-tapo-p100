@@ -56,6 +56,14 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
         .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
         .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
+      this.service.addOptionalCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic);
+      this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
+        .on('get', this.getCurrentConsumption.bind(this));
+  
+      this.service.addOptionalCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic);
+      this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
+        .on('get', this.getTotalConsumption.bind(this));
+          
       this.updateConsumption();
 
       const interval = updateInterval ? updateInterval*1000 : 10000;
@@ -69,19 +77,21 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
   }
 
   private updateConsumption(){
+    this.log.debug('updateConsumption called');
     this.tpLinkAccessory.getEnergyUsage().then((response) => {
+      this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
       if (this.fakeGatoHistoryService && response && response.current_power) {
         this.platform.log.debug('Get Characteristic Power consumption ->', response.current_power);
         this.fakeGatoHistoryService.addEntry({
           time: new Date().getTime() / 1000,
-          power: response.current_power,
+          power: this.tpLinkAccessory.getPowerConsumption().current,
         });
       }
     });
 
     setTimeout(()=>{
       this.updateConsumption();
-    }, 300000);
+    }, 600000);
   }
 
   /**

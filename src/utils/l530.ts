@@ -74,7 +74,7 @@ export default class L530 extends L520E {
         if(response && response.result){
           this._consumption = {
             total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today) : 0,
           };
         } else{
           this._consumption = {
@@ -100,7 +100,7 @@ export default class L530 extends L520E {
         if(response && response.result){
           this._consumption = {
             total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today)  : 0,
           };
         } else{
           this._consumption = {
@@ -126,5 +126,9 @@ export default class L530 extends L520E {
 
   public getPowerConsumption():ConsumptionInfo{
     return this._consumption;
+  }
+
+  private toHours(minutes: number):number{
+    return minutes/60;
   }
 }
