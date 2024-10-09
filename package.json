@@ -37,7 +37,6 @@
   ],
   "dependencies": {
     "axios": "^1.7.7",
-    "cron": "^3.1.7",
     "fakegato-history": "^0.6.5",
     "lodash.defaults": "^4.2.0",
     "utf8": "^3.0.0",
