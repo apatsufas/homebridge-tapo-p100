@@ -287,6 +287,9 @@ export default class P100 implements TpLinkAccessory{
       })
       .catch((error: Error) => {
         this.log.error('276 Error: ' + error.message);
+        if(error.message.indexOf('403') > -1){
+          this.reAuthenticate();
+        }
         return error;
       });
   }
