@@ -578,7 +578,7 @@ export default class P100 implements TpLinkAccessory{
       return this.handleRequest(payload).then((result) => {
         return result ? true : false;
       }).catch((error) => {
-        if (error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
+        if (error.message && error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
           return this.reconnect().then(() => {
             return this.handleRequest(payload).then((result) => {
               return result ? true : false;
@@ -592,7 +592,7 @@ export default class P100 implements TpLinkAccessory{
       return this.handleKlapRequest(payload).then((result) => {
         return result ? true : false;
       }).catch((error) => {
-        if (error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
+        if (error.message && error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
           return this.newReconnect().then(() => {
             return this.handleKlapRequest(payload).then((result) => {
               return result ? true : false;
