@@ -2,7 +2,7 @@
   "displayName": "Tapo P100 Plugin",
   "name": "homebridge-tapo",
   "type": "module",
-  "version": "1.5.2-beta6",
+  "version": "1.5.2-beta7",
   "description": "Homebridge Plugin for TP-Link Tapo P100 Plugs",
   "license": "Apache-2.0",
   "homepage": "https://github.com/apatsufas/homebridge-tapo-p100#readme",
