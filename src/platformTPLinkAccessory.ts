@@ -1,6 +1,6 @@
 import { CharacteristicGetCallback, CharacteristicSetCallback, CharacteristicValue, Logger, PlatformAccessory, Service } from 'homebridge';
-import TapoPlatform from './platform';
-import { TpLinkAccessory } from './utils/tplinkAccessory';
+import type { TapoPlatform } from './platform.js';
+import { TpLinkAccessory } from './utils/tplinkAccessory.js';
 
 export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{ 
 
@@ -108,6 +108,10 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
           this.platform.log.debug('On is undefined -> set no response');
           this.setNoResponse();
         }
+
+        setTimeout(()=>{
+          this.updateState(interval);
+        }, interval);
       } else{
         this.setNoResponse();
         interval += 300000;

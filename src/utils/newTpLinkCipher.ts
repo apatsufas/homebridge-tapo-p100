@@ -1,12 +1,12 @@
 import { Logger } from 'homebridge';
+import crypto from 'crypto';
 
 export default class NewTpLinkCipher{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public iv: any; 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public key: any; 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  private crypto = require('crypto');
+  private _crypto = crypto;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public sig: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,13 +27,13 @@ export default class NewTpLinkCipher{
       data = Buffer.from(data, 'utf8');
     }
   
-    const cipher = this.crypto.createCipheriv('aes-128-cbc', this.key, this.ivSeqPair());
+    const cipher = this._crypto.createCipheriv('aes-128-cbc', this.key, this.ivSeqPair());
     const cipherText = Buffer.concat([cipher.update(data), cipher.final()]);
   
     const seqBuffer = Buffer.alloc(4);
     seqBuffer.writeInt32BE(this.seq, 0);
   
-    const hash = this.crypto.createHash('sha256');
+    const hash = this._crypto.createHash('sha256');
     hash.update(Buffer.concat([this.sig, seqBuffer, cipherText]));
   
     const signature = hash.digest();
@@ -45,7 +45,7 @@ export default class NewTpLinkCipher{
   }
   
   public decrypt(data: Buffer) {
-    const decipher = this.crypto.createDecipheriv(
+    const decipher = this._crypto.createDecipheriv(
       'aes-128-cbc',
       this.key,
       this.ivSeqPair(),
@@ -76,20 +76,20 @@ export default class NewTpLinkCipher{
   
   private calculateKey(local_seed: Buffer, remote_seed: Buffer, auth_hash: Buffer) {
     const buf = Buffer.concat([Buffer.from('lsk'), local_seed, remote_seed, auth_hash]);
-    const hash = this.crypto.createHash('sha256').update(buf).digest();
+    const hash = this._crypto.createHash('sha256').update(buf).digest();
     this.key = hash.subarray(0, 16);
   }
   
   private calculateIvSeq(local_seed: Buffer, remote_seed: Buffer, auth_hash: Buffer) {
     const buf = Buffer.concat([Buffer.from('iv'), local_seed, remote_seed, auth_hash]);
-    const ivBuf = this.crypto.createHash('sha256').update(buf).digest();
+    const ivBuf = this._crypto.createHash('sha256').update(buf).digest();
     this.seq = ivBuf.subarray(-4).readInt32BE(0);
     this.iv = ivBuf.subarray(0, 12);
   }
   
   private calculateSig(local_seed: Buffer, remote_seed: Buffer, auth_hash: Buffer) {
     const payload = Buffer.concat([Buffer.from('ldk'), local_seed, remote_seed, auth_hash]);
-    this.sig = this.crypto.createHash('sha256').update(payload).digest().subarray(0, 28);
+    this.sig = this._crypto.createHash('sha256').update(payload).digest().subarray(0, 28);
   }
   
   private ivSeqPair() {

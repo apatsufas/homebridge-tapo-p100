@@ -1,7 +1,7 @@
 import { Logger } from 'homebridge';
-import { ColorLightSysinfo, ConsumptionInfo } from '../homekit-device/types';
-import L520E from './l520e';
-import { PowerUsage } from './powerUsage';
+import { ColorLightSysinfo, ConsumptionInfo } from '../homekit-device/types.js';
+import L520E from './l520e.js';
+import { PowerUsage } from './powerUsage.js';
 
 export default class L530 extends L520E {
 
@@ -74,7 +74,7 @@ export default class L530 extends L520E {
         if(response && response.result){
           this._consumption = {
             total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today) : 0,
           };
         } else{
           this._consumption = {
@@ -85,7 +85,7 @@ export default class L530 extends L520E {
                         
         return response.result;
       }).catch((error)=>{
-        if(error.message.indexOf('9999') > 0){
+        if(error.message && error.message.indexOf('9999') > 0){
           return this.reconnect().then(()=>{
             return this.handleKlapRequest(payload).then(()=>{
               return true;
@@ -100,7 +100,7 @@ export default class L530 extends L520E {
         if(response && response.result){
           this._consumption = {
             total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today - this._consumption.current : 0,
+            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today)  : 0,
           };
         } else{
           this._consumption = {
@@ -111,7 +111,7 @@ export default class L530 extends L520E {
                         
         return response.result;
       }).catch((error)=>{
-        if(error.message.indexOf('9999') > 0){
+        if(error.message && error.message.indexOf('9999') > 0){
           return this.reconnect().then(()=>{
             return this.handleRequest(payload).then(()=>{
               return true;
@@ -125,6 +125,16 @@ export default class L530 extends L520E {
   }
 
   public getPowerConsumption():ConsumptionInfo{
+    if(!this.getSysInfo().device_on){
+      return {
+        total: this._consumption.total,
+        current: 0,
+      };
+    }
     return this._consumption;
+  }
+
+  private toHours(minutes: number):number{
+    return minutes/60;
   }
 }

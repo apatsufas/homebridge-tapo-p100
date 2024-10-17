@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Logger } from 'homebridge';
+import crypto from 'crypto';
 
 export default class TpLinkCipher{
   public iv: any; 
   public key: any; 
-  private crypto = require('crypto');
+  private _crypto = crypto;
 
   constructor(public readonly log: Logger, b_arr: any, b_arr2: any){
     this.iv = b_arr2;
@@ -18,14 +18,14 @@ export default class TpLinkCipher{
   }
 
   public encrypt(data:string){
-    const cipher = this.crypto.createCipheriv('aes-128-cbc', this.key, this.iv);
+    const cipher = this._crypto.createCipheriv('aes-128-cbc', this.key, this.iv);
     let encrypted = cipher.update(data, 'utf8', 'base64');
     encrypted += cipher.final('base64');
     return encrypted;
   }
 
   public decrypt(data: string){
-    const decipher = this.crypto.createDecipheriv('aes-128-cbc', this.key, this.iv);
+    const decipher = this._crypto.createDecipheriv('aes-128-cbc', this.key, this.iv);
     let decrypted = decipher.update(data, 'base64', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;

@@ -1,7 +1,7 @@
 import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
-import TapoPlatform from './platform';
-import L510E from './utils/l510e';
-import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
+import type { TapoPlatform } from './platform.js';
+import L510E from './utils/l510e.js';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
 
 /**
  * L510E Accessory

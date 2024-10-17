@@ -1,7 +1,7 @@
 import { Logger } from 'homebridge';
-import { EnergyUsage } from './energyUsage';
-import P100 from './p100';
-import { ConsumptionInfo } from '../homekit-device/types';
+import { EnergyUsage } from './energyUsage.js';
+import P100 from './p100.js';
+import { ConsumptionInfo } from '../homekit-device/types.js';
 
 export default class P110 extends P100 {
 
@@ -28,7 +28,7 @@ export default class P110 extends P100 {
       return this.handleKlapRequest(payload).then((response)=>{
         if(response && response.result){
           this._consumption = {
-            current: response.result.current_power / 1000,
+            current: Math.ceil(response.result.current_power / 1000),
             total: response.result.today_energy / 1000,
           };
         } else{
@@ -44,7 +44,7 @@ export default class P110 extends P100 {
       return this.handleRequest(payload).then((response)=>{
         if(response && response.result){
           this._consumption = {
-            current: response.result.current_power / 1000,
+            current: Math.ceil(response.result.current_power / 1000),
             total: response.result.today_energy / 1000,
           };
         } else{

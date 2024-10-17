@@ -1,4 +1,4 @@
-import { Usage } from './usage';
+import { Usage } from './usage.js';
 
 export class PowerUsage{
   time_usage!:Usage;

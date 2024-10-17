@@ -1,6 +1,6 @@
-import { ConsumptionInfo, PlugSysinfo } from '../homekit-device/types';
-import { EnergyUsage } from './energyUsage';
-import { PowerUsage } from './powerUsage';
+import { ConsumptionInfo, PlugSysinfo } from '../homekit-device/types.js';
+import { EnergyUsage } from './energyUsage.js';
+import { PowerUsage } from './powerUsage.js';
 
 export interface TpLinkAccessory{
     is_klap:boolean;

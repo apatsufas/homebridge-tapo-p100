@@ -10,24 +10,24 @@ import {
   Categories,
 } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { P100Accessory } from './platformP100Accessory';
-import { parseConfig, TapoConfig } from './config';
-import { L510EAccessory } from './platformL510EAccessory';
-import { L530Accessory } from './platformL530Accessory';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
+import { P100Accessory } from './platformP100Accessory.js';
+import { parseConfig, TapoConfig } from './config.js';
+import { L510EAccessory } from './platformL510EAccessory.js';
+import { L530Accessory } from './platformL530Accessory.js';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 import fakegato from 'fakegato-history';
-import { P110Accessory } from './platformP110Accessory';
-import Characteristics from './custom-characteristics';
-import { L520EAccessory } from './platformL520EAccessory';
+import { P110Accessory } from './platformP110Accessory.js';
+import Characteristics from './custom-characteristics/index.js';
+import { L520EAccessory } from './platformL520EAccessory.js';
 
 /**
  * TapoPlatform
  * This class is the main constructor for your plugin, this is where you should
  * parse the user config and discover/register accessories with Homebridge.
  */
-export default class TapoPlatform implements DynamicPlatformPlugin {
+export class TapoPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service;
   public readonly Characteristic: typeof Characteristic;
   public readonly FakeGatoHistoryService;
@@ -48,7 +48,7 @@ export default class TapoPlatform implements DynamicPlatformPlugin {
   ) {
     this.Service = api.hap.Service;
     this.Characteristic = api.hap.Characteristic;
-    
+
     this.log.debug('config.json: %j', config);
     this.config = parseConfig(config);
     this.log.debug('config: %j', this.config);

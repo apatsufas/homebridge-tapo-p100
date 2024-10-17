@@ -1,8 +1,8 @@
 import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
   AdaptiveLightingController } from 'homebridge';
-import TapoPlatform from './platform';
-import L530 from './utils/l530';
-import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
+import type { TapoPlatform } from './platform.js';
+import L530 from './utils/l530.js';
+import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
 
 /**
  * L530 Accessory
@@ -12,7 +12,6 @@ import { TPLinkPlatformAccessory } from './platformTPLinkAccessory';
 export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   private adaptiveLightingController!: AdaptiveLightingController;
   private readonly fakeGatoHistoryService?;
-  private lastMeasurement: number | null = null;
 
   constructor(
     public readonly log: Logger,
@@ -87,11 +86,26 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         .on('set', this.setSaturation.bind(this))                // SET - bind to the `setSaturation` method below
         .on('get', this.getSaturation.bind(this));               // GET - bind to the `getSaturation` method below
         
+      this.service.addOptionalCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic);
+      this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
+        .on('get', this.getCurrentConsumption.bind(this));
+
+      this.service.addOptionalCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic);
+      this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
+        .on('get', this.getTotalConsumption.bind(this));
+
+      /*  this.service.addOptionalCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic);
+      this.service.getCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic)
+        .on('set', this.resetConsumption.bind(this));*/
+
       // Setup the adaptive lighting controller if available
       if (this.platform.api.versionGreaterOrEqual && this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')) {
         this.log.debug('Enabling Adaptvie Lightning');
         this.adaptiveLightingController = new platform.api.hap.AdaptiveLightingController(
-          this.service,
+          this.service, {
+            controllerMode:
+              this.platform.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
+          },
         );
         this.accessory.configureController(this.adaptiveLightingController);
       }
@@ -344,23 +358,19 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
     this.tpLinkAccessory.getEnergyUsage().then((response) => {
       this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
       if (response && response.power_usage) {
-        if(this.lastMeasurement){
-          this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
-          if (this.fakeGatoHistoryService ) {
-            this.fakeGatoHistoryService.addEntry({
-              time: new Date().getTime() / 1000,
-              power: response.power_usage.today > 0 ? response.power_usage.today - this.lastMeasurement > 0 ? 
-                response.power_usage.today - this.lastMeasurement : 0 : 0, 
-            });
-          }
+        this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
+        if (this.fakeGatoHistoryService ) {
+          this.fakeGatoHistoryService.addEntry({
+            time: new Date().getTime() / 1000,
+            power: this.tpLinkAccessory.getPowerConsumption().current, 
+          });
         }
-        this.lastMeasurement = response.power_usage.today;
       }
     });
 
     setTimeout(()=>{
       this.updateConsumption();
-    }, 300000);
+    }, 600000);
   }
 
   /**
@@ -415,7 +425,7 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
     this.log.debug('updateState called');
     this.tpLinkAccessory.getDeviceInfo(true).then((response) => {
       if(response){
-        this.log.info('Device Info: ' + JSON.stringify(response));
+        this.log.debug('Device Info: ' + JSON.stringify(response));
         const isOn = response.device_on;
         const saturation = response.saturation;
         const hue = response.hue;
