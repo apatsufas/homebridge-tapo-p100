@@ -116,6 +116,14 @@ I created the plugin for personal use and wanted to share it with other people t
 
 Maybe you would consider buying me a [coffee](https://www.paypal.me/AZimnas)
 
+## Important / Limitations
+
+Use your E-Mail, with which you created an account for Tapo, as your username (https://github.com/apatsufas/homebridge-tapo-p100/issues/13#issuecomment-981062496)
+
+Use a password that is 8 characters long, not more and down use any special characters, only numbers and letters (https://github.com/apatsufas/homebridge-tapo-p100/issues/13#issuecomment-981062496)
+
+If you are on the latest firmware version, you must enable "Third-Party Compatibility" in the Tapo App (https://github.com/apatsufas/homebridge-tapo-p100/issues/62#issuecomment-3467057353)
+
 ### Thanks / Credits
 
 Ported from the Python library https://github.com/fishbigger/TapoP100 (by @fishbigger) to Nodejs.
