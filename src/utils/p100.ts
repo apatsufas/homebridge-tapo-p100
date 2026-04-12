@@ -673,12 +673,20 @@ export default class P100 implements TpLinkAccessory{
       }).catch(async (error: Error) => {
         if (error.message.indexOf('403') > -1) {
           this.log.info('Got 403, re-authenticating and retrying...');
-          await this.newReconnect();
-          this.log.info('Re-authenticated, retrying request...');
-          const retryData = this.newTpLinkCipher.encrypt(payload);
-          const retryRes = await this.raw_request('request', retryData.encryptedPayload, 'arraybuffer',
-            { seq: retryData.seq.toString() });
-          return JSON.parse(this.newTpLinkCipher.decrypt(retryRes));
+          try {
+            await this.newReconnect();
+            this.log.info('Re-authenticated, retrying request...');
+            if (!this.newTpLinkCipher) {
+              throw new Error('KLAP cipher not initialized after reconnect');
+            }
+            const retryData = this.newTpLinkCipher.encrypt(payload);
+            const retryRes = await this.raw_request('request', retryData.encryptedPayload, 'arraybuffer',
+              { seq: retryData.seq.toString() });
+            return JSON.parse(this.newTpLinkCipher.decrypt(retryRes));
+          } catch (retryError) {
+            this.log.error('Retry after 403 failed: ' + (retryError instanceof Error ? retryError.message : String(retryError)));
+            throw retryError;
+          }
         }
         throw error;
       });

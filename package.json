@@ -14,13 +14,14 @@
     "url": "https://github.com/apatsufas/homebridge-tapo-p100/issues"
   },
   "engines": {
-    "node": "^18.20.4 || ^20.16.0 || ^22.6.0",
+    "node": "^18.20.4 || ^20.16.0 || ^22.6.0 || >=24.0.0",
     "homebridge": "^1.8.0 || ^2.0.0-beta.0"
   },
   "main": "dist/index.js",
   "scripts": {
     "build": "rimraf ./dist && tsc",
     "lint": "eslint . --max-warnings=0",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run lint && npm run build",
     "test:p110": "tsx scripts/test-p110.ts",
     "watch": "npm run build && npm link && nodemon"
