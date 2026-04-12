@@ -22,6 +22,7 @@
     "build": "rimraf ./dist && tsc",
     "lint": "eslint . --max-warnings=0",
     "prepublishOnly": "npm run lint && npm run build",
+    "test:p110": "tsx scripts/test-p110.ts",
     "watch": "npm run build && npm link && nodemon"
   },
   "keywords": [
@@ -55,6 +56,7 @@
     "rimraf": "^6.0.1",
     "ts-essentials": "^10.0.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.0.1"
   }
