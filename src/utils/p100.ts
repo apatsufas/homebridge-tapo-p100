@@ -286,7 +286,7 @@ export default class P100 implements TpLinkAccessory{
         }
       })
       .catch((error: Error) => {
-        this.log.error('276 Error: ' + error.message);
+        this.log.error('276 Error: ' + error.message + ', on ip: ' + this.ip);
         if(error.message.indexOf('403') > -1){
           this.reAuthenticate();
         }
@@ -488,8 +488,8 @@ export default class P100 implements TpLinkAccessory{
           }
         })
         .catch((error: Error) => {
-          this.log.debug('469 Error: ' + JSON.stringify(error));
-          this.log.error('469 Error: ' + error.message);
+          this.log.debug('469 Error: ' + JSON.stringify(error) + ', on ip: ' + this.ip);
+          this.log.error('469 Error: ' + error.message + ', on ip: ' + this.ip);
           if(error.message.indexOf('403') > -1){
             this.reAuthenticate();
           }
