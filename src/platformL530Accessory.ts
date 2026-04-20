@@ -140,6 +140,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set brightness: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       callback(null);
@@ -195,6 +198,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set color temperature: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       // you must call the callback function
@@ -252,6 +258,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set hue: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       callback(null);
@@ -312,6 +321,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set saturation: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       callback(null);
@@ -366,6 +378,8 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
           });
         }
       }
+    }).catch((error) => {
+      this.log.error('Failed to get energy usage: ' + error);
     });
 
     setTimeout(()=>{

@@ -59,6 +59,9 @@ export abstract class TPLinkPlatformAccessory <T extends TpLinkAccessory>{
       } else{
         callback(new Error('unreachable'), false);
       }
+    }).catch((error) => {
+      this.log.error('Failed to set power state: ' + error);
+      callback(new Error('unreachable'), false);
     });
   }
 

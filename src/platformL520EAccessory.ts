@@ -91,6 +91,9 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set brightness: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       callback(null);
@@ -177,6 +180,9 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set color temperature: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       // you must call the callback function
