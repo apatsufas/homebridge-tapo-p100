@@ -80,6 +80,9 @@ export class L510EAccessory extends TPLinkPlatformAccessory<L510E> {
         } else{
           callback(new Error('unreachable'), false);
         }
+      }).catch((error) => {
+        this.log.error('Failed to set brightness: ' + error);
+        callback(new Error('unreachable'), false);
       });
     } else{
       callback(null);
