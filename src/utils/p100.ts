@@ -580,10 +580,10 @@ export default class P100 implements TpLinkAccessory{
       }).catch((error) => {
         if (error.message && error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
           return this.reconnect().then(() => {
-            return this.handleRequest(payload).then((result) => {
-              return result ? true : false;
-            });
-          });
+            return this.handleRequest(payload);
+          }).then((result) => {
+            return result ? true : false;
+          }).catch(() => false);
         }
         this._reconnect_counter = 0;
         return false;
@@ -594,10 +594,10 @@ export default class P100 implements TpLinkAccessory{
       }).catch((error) => {
         if (error.message && error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
           return this.newReconnect().then(() => {
-            return this.handleKlapRequest(payload).then((result) => {
-              return result ? true : false;
-            });
-          });
+            return this.handleKlapRequest(payload);
+          }).then((result) => {
+            return result ? true : false;
+          }).catch(() => false);
         }
         this._reconnect_counter = 0;
         return false;
@@ -685,10 +685,10 @@ export default class P100 implements TpLinkAccessory{
             return JSON.parse(this.newTpLinkCipher.decrypt(retryRes));
           } catch (retryError) {
             this.log.error('Retry after 403 failed: ' + (retryError instanceof Error ? retryError.message : String(retryError)));
-            throw retryError;
+            throw retryError instanceof Error ? retryError : new Error(String(retryError));
           }
         }
-        throw error;
+        throw error instanceof Error ? error : new Error(String(error));
       });
     }
     return new Promise<true>((resolve, reject) => {
