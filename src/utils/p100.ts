@@ -287,10 +287,10 @@ export default class P100 implements TpLinkAccessory{
       })
       .catch((error: Error) => {
         this.log.error('276 Error: ' + error.message + ', on ip: ' + this.ip);
-        if(error.message.indexOf('403') > -1){
+        if(error.message && error.message.indexOf('403') > -1){
           this.reAuthenticate();
         }
-        throw error;
+        throw new Error('Request failed: ' + (error instanceof Error ? error.message : String(error)));
       });
   }
 
@@ -436,7 +436,7 @@ export default class P100 implements TpLinkAccessory{
         })
         .catch((error: Error) => {
           this.log.error('371 Error: ' + error.message);
-          throw error;
+          throw new Error('Get device info failed: ' + (error instanceof Error ? error.message : String(error)));
         });
     } else if (this.newTpLinkCipher) {
       const data = this.newTpLinkCipher.encrypt(payload);
@@ -490,10 +490,10 @@ export default class P100 implements TpLinkAccessory{
         .catch((error: Error) => {
           this.log.debug('469 Error: ' + JSON.stringify(error) + ', on ip: ' + this.ip);
           this.log.error('469 Error: ' + error.message + ', on ip: ' + this.ip);
-          if(error.message.indexOf('403') > -1){
+          if(error.message && error.message.indexOf('403') > -1){
             this.reAuthenticate();
           }
-          throw error;
+          throw new Error('Get device info KLAP failed: ' + (error instanceof Error ? error.message : String(error)));
         });
 
 

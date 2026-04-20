@@ -82,7 +82,7 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
       this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
       if (this.fakeGatoHistoryService && response && response.current_power) {
         this.platform.log.debug('Get Characteristic Power consumption ->', response.current_power);
-        this.service.updateCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic, response.current_power/1000);
+        //this.service.updateCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic, response.current_power/1000);
         this.fakeGatoHistoryService.addEntry({
           time: new Date().getTime() / 1000,
           power: this.tpLinkAccessory.getPowerConsumption().current,
