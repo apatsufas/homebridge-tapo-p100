@@ -290,7 +290,7 @@ export default class P100 implements TpLinkAccessory{
         if(error.message.indexOf('403') > -1){
           this.reAuthenticate();
         }
-        return error;
+        throw error;
       });
   }
 
@@ -436,7 +436,7 @@ export default class P100 implements TpLinkAccessory{
         })
         .catch((error: Error) => {
           this.log.error('371 Error: ' + error.message);
-          return error;
+          throw error;
         });
     } else if (this.newTpLinkCipher) {
       const data = this.newTpLinkCipher.encrypt(payload);
@@ -493,13 +493,13 @@ export default class P100 implements TpLinkAccessory{
           if(error.message.indexOf('403') > -1){
             this.reAuthenticate();
           }
-          return error;
+          throw error;
         });
 
 
     } else {
       return new Promise<PlugSysinfo>((resolve, reject) => {
-        reject();
+        reject(new Error('Device not authenticated - handshake required'));
       });
     }
   }
@@ -670,12 +670,29 @@ export default class P100 implements TpLinkAccessory{
 
       return this.raw_request('request', data.encryptedPayload, 'arraybuffer', { seq: data.seq.toString() }).then((res) => {
         return JSON.parse(this.newTpLinkCipher.decrypt(res));
-      }).catch((error: Error) => {
-        return this.handleError(error.message, '671');
+      }).catch(async (error: Error) => {
+        if (error.message.indexOf('403') > -1) {
+          this.log.info('Got 403, re-authenticating and retrying...');
+          try {
+            await this.newReconnect();
+            this.log.info('Re-authenticated, retrying request...');
+            if (!this.newTpLinkCipher) {
+              throw new Error('KLAP cipher not initialized after reconnect');
+            }
+            const retryData = this.newTpLinkCipher.encrypt(payload);
+            const retryRes = await this.raw_request('request', retryData.encryptedPayload, 'arraybuffer',
+              { seq: retryData.seq.toString() });
+            return JSON.parse(this.newTpLinkCipher.decrypt(retryRes));
+          } catch (retryError) {
+            this.log.error('Retry after 403 failed: ' + (retryError instanceof Error ? retryError.message : String(retryError)));
+            throw retryError;
+          }
+        }
+        throw error;
       });
     }
     return new Promise<true>((resolve, reject) => {
-      reject();
+      reject(new Error('KLAP cipher not initialized'));
     });
   }
 
