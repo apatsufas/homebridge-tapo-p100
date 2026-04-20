@@ -89,7 +89,7 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
         });
       }
     }).catch((error) => {
-      this.log.error('Failed to get energy usage: ' + error);
+      this.log.debug('Failed to get energy usage: ' + error);
     });
 
     setTimeout(()=>{
