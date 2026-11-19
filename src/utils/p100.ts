@@ -9,6 +9,9 @@ import { TpLinkAccessory } from './tplinkAccessory.js';
 import axios from 'axios';
 import crypto from 'crypto';
 
+/** Renew a KLAP session this long before the device-reported TIMEOUT runs out. */
+const KLAP_RENEW_MARGIN_MS = 60000;
+
 export default class P100 implements TpLinkAccessory{
 
   private _crypto = crypto;
@@ -27,6 +30,8 @@ export default class P100 implements TpLinkAccessory{
   private _plugSysInfo!: PlugSysinfo;
   private _reconnect_counter: number;
   private _klapReconnect?: Promise<void>;
+  private _klapQueue: Promise<unknown> = Promise.resolve();
+  private _klapSessionExpiresAt?: number;
   protected _timeout!: number;
 
   protected tpLinkCipher!: TpLinkCipher;
@@ -294,9 +299,16 @@ export default class P100 implements TpLinkAccessory{
 
         try {
           if (res.headers && res.headers['set-cookie']) {
-            this.log.debug('Handshake 1 cookie: ' + JSON.stringify(res.headers['set-cookie'][0]));
-            this.cookie = res.headers['set-cookie'][0].split(';')[0];
-            this.tplink_timeout = Number(res.headers['set-cookie'][0].split(';')[1]);
+            const setCookie: string = res.headers['set-cookie'][0];
+            this.log.debug('Handshake 1 cookie: ' + JSON.stringify(setCookie));
+            this.cookie = setCookie.split(';')[0];
+            // e.g. "TP_SESSIONID=...;TIMEOUT=86400": session lifetime in seconds
+            const timeout = /TIMEOUT=(\d+)/i.exec(setCookie);
+            if (timeout) {
+              this.tplink_timeout = Number(timeout[1]);
+              this._klapSessionExpiresAt = Date.now() + this.tplink_timeout * 1000;
+              this.log.debug('KLAP session on ' + this.ip + ' valid for ' + this.tplink_timeout + 's');
+            }
           }
           return res.data;
         } catch (error) {
@@ -305,8 +317,9 @@ export default class P100 implements TpLinkAccessory{
       })
       .catch((error: Error) => {
         // 403 (session expired) is handled by the caller (handleKlapRequest), which re-authenticates
-        // once and retries. Re-authenticating here as well caused concurrent handshakes.
-        this.log.error('276 Error: ' + error.message + ', on ip: ' + this.ip);
+        // once and retries, so it is only worth a debug line here. Real failures are logged by callers.
+        const level = error.message && error.message.indexOf('403') > -1 ? 'debug' : 'error';
+        this.log[level]('276 Error: ' + error.message + ', on ip: ' + this.ip);
         throw new Error('Request failed: ' + (error instanceof Error ? error.message : String(error)));
       });
   }
@@ -631,7 +644,29 @@ export default class P100 implements TpLinkAccessory{
     return Promise.reject(new Error('Device not authenticated - handshake required'));
   }
 
+  /**
+   * Sends one KLAP request. Requests to the same device are queued and sent one at a time: the
+   * KLAP sequence number must reach the device in order, and a single expired session should
+   * cause one re-authentication, not one per in-flight request.
+   */
   protected handleKlapRequest(payload: string): Promise<any> {
+    const run = this._klapQueue.then(() => this.sendKlapRequest(payload));
+    // keep the queue going whether this request succeeds or fails
+    this._klapQueue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async sendKlapRequest(payload: string): Promise<any> {
+    if (this.newTpLinkCipher && this._klapSessionExpiresAt && Date.now() > this._klapSessionExpiresAt - KLAP_RENEW_MARGIN_MS) {
+      this.log.debug('KLAP session about to expire on ' + this.ip + ', renewing');
+      try {
+        await this.newReconnect();
+      } catch (error) {
+        // fall through: the request below will 403 and take the normal recovery path
+        this.log.debug('Proactive KLAP renewal failed: ' + (error instanceof Error ? error.message : String(error)));
+      }
+    }
+
     if (this.newTpLinkCipher) {
       const data = this.newTpLinkCipher.encrypt(payload);
 
@@ -639,10 +674,10 @@ export default class P100 implements TpLinkAccessory{
         return JSON.parse(this.newTpLinkCipher.decrypt(res));
       }).catch(async (error: Error) => {
         if (error.message.indexOf('403') > -1) {
-          this.log.info('Got 403, re-authenticating and retrying...');
+          this.log.info('KLAP session expired on ' + this.ip + ', re-authenticating');
           try {
             await this.newReconnect();
-            this.log.info('Re-authenticated, retrying request...');
+            this.log.debug('Re-authenticated, retrying request...');
             if (!this.newTpLinkCipher) {
               throw new Error('KLAP cipher not initialized after reconnect');
             }
