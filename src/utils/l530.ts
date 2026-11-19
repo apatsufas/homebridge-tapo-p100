@@ -18,7 +18,6 @@ export default class L530 extends L520E {
     super(log, ipAddress, email, password, timeout);
     this.log.debug('Constructing L530 on host: ' + ipAddress);
     this._consumption = {
-      total: 0,
       current: 0,
     };
   }
@@ -37,15 +36,11 @@ export default class L530 extends L520E {
       saturation = 0;
     }
     this.log.debug('Setting color: ' + hue + ', ' + saturation);
-    const payload = '{'+
-              '"method": "set_device_info",'+
-              '"params": {'+
-                  '"hue": ' + Math.round(hue) + ','+
-                  '"color_temp": 0,' +
-                  '"saturation": ' + Math.round(saturation) +
-                  '},'+
-                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                  '};';
+    const payload = this.buildPayload('set_device_info', {
+      hue: Math.round(hue),
+      color_temp: 0,
+      saturation: Math.round(saturation),
+    });
 
     return this.sendRequest(payload);
   }
@@ -60,81 +55,54 @@ export default class L530 extends L520E {
   }
 
   async getEnergyUsage():Promise<PowerUsage>{        
-    const payload = '{'+
-                '"method": "get_device_usage",'+
-                    '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                    '};';
+    const payload = this.buildPayload('get_device_usage');
     this.log.debug('getEnergyUsage called');
 
-    if(this.is_klap){
-      this.log.debug('getEnergyUsage is klap');
+    // Session-expiry retries happen inside handleKlapRequest (403) and handleRequest (9999),
+    // so errors that reach here are real failures and are passed on to the caller.
+    const request = this.is_klap ? this.handleKlapRequest(payload) : this.handleRequest(payload);
 
-      return this.handleKlapRequest(payload).then((response)=>{
-        this.log.debug('Consumption: ' + JSON.stringify(response));
-        if(response && response.result){
-          this._consumption = {
-            total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today) : 0,
-          };
-        } else{
-          this._consumption = {
-            total: 0,
-            current: 0,
-          };
-        }
-                        
-        return response.result;
-      }).catch((error)=>{
-        if(error.message && error.message.indexOf('9999') > 0){
-          return this.reconnect().then(()=>{
-            return this.handleKlapRequest(payload).then(()=>{
-              return true;
-            });
-          });
-        }
-        return false;
-      });
-    }else{
-      return this.handleRequest(payload).then((response)=>{
-        this.log.debug('Consumption: ' + response);
-        if(response && response.result){
-          this._consumption = {
-            total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today)  : 0,
-          };
-        } else{
-          this._consumption = {
-            total: 0,
-            current: 0,
-          };
-        }
-                        
-        return response.result;
-      }).catch((error)=>{
-        if(error.message && error.message.indexOf('9999') > 0){
-          return this.reconnect().then(()=>{
-            return this.handleRequest(payload).then(()=>{
-              return true;
-            });
-          });
-        }
-        return false;
-      });
+    return request.then((response)=>{
+      this.log.debug('Consumption: ' + JSON.stringify(response));
+      // handleRequest resolves `false` on device errors; never dereference it blindly.
+      const result = response ? response.result : undefined;
+      if(result && result.power_usage && result.time_usage){
+        this._consumption = {
+          current: this.estimateWatts(result),
+          todayWh: result.power_usage.today,
+        };
+      }
+      // On a failed request keep the last estimate rather than reporting a fake 0 W.
+
+      return result;
+    });
+  }
+
+  /**
+   * Power while the bulb is on, in W. The L530 has no power meter and only reports energy (Wh) and
+   * on-time (minutes) totals, so this is an average: past 7 days if available, else past 30 days,
+   * else today. Today alone is unreliable: the bulb reports whole Wh, so after a few minutes of
+   * on-time it can read 0 Wh and give 0 W for a bulb that is on.
+   */
+  private estimateWatts(usage: PowerUsage):number{
+    for(const period of ['past7', 'past30', 'today'] as const){
+      const hours = usage.time_usage[period] / 60;
+      const wh = usage.power_usage[period];
+      if(hours > 0 && Number.isFinite(wh)){
+        return wh / hours;
+      }
     }
-    
+    return 0;
   }
 
   public getPowerConsumption():ConsumptionInfo{
-    if(!this.getSysInfo().device_on){
+    const sysInfo = this.getSysInfo();
+    if(!sysInfo || !sysInfo.device_on){
       return {
-        total: this._consumption.total,
         current: 0,
+        todayWh: this._consumption.todayWh,
       };
     }
     return this._consumption;
-  }
-
-  private toHours(minutes: number):number{
-    return minutes/60;
   }
 }

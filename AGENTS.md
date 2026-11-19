@@ -92,8 +92,8 @@ src/
 ## CI/CD
 
 GitHub Actions runs on push/PR:
-- Matrix: Node 18.x, 20.x, 22.x
-- Steps: install → lint → build → audit outdated → rebuild
+- Matrix: Node 18.x, 20.x, 22.x, 24.x
+- Steps: npm ci → lint → build → audit (report only, production deps)
 - Build must pass on all Node versions
 
 ## Key Constraints
@@ -109,7 +109,7 @@ GitHub Actions runs on push/PR:
 **Dependencies**:
 - `axios` - HTTP requests to devices
 - `fakegato-history` - Eve app history (power consumption)
-- `lodash.defaults`, `utf8`, `uuid` - utilities
+- Everything else uses Node built-ins (`crypto.randomUUID`, `crypto.generateKeyPair`)
 
 ## Common Pitfalls
 

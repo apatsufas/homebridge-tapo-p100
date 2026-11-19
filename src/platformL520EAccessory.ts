@@ -1,4 +1,4 @@
-import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger } from 'homebridge';
+import { PlatformAccessory, CharacteristicValue, Logger } from 'homebridge';
 import type { TapoPlatform } from './platform.js';
 import L520E from './utils/l520e.js';
 import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
@@ -44,25 +44,22 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
       // each service must implement at-minimum the "required characteristics" for the given service type
       // see https://developers.homebridge.io/#/service/Outlet
 
-      // register handlers for the On/Off Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.On)
-        .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
-        .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+        .onSet(this.setOn.bind(this))
+        .onGet(this.getOn.bind(this));
 
-      // register handlers for the Brightness Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-        .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
-        .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
+        .onSet(this.setBrightness.bind(this))
+        .onGet(this.getBrightness.bind(this));
 
-      // register handlers for the ColorTemperature Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.ColorTemperature)
-        .on('set', this.setColorTemp.bind(this))                // SET - bind to the `setColorTemp` method below
-        .on('get', this.getColorTemp.bind(this))
+        .onSet(this.setColorTemp.bind(this))
+        .onGet(this.getColorTemp.bind(this))
         .setProps({
           minValue: 154,
           maxValue: 400,
           minStep: 1,
-        });              // GET - bind to the `getColorTemp` method below
+        });
 
       
       const interval = updateInterval ? updateInterval*1000 : 10000;
@@ -70,8 +67,8 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
         this.updateState(interval);
       }, interval);
     }).catch(() => {
-      this.setNoResponse();
       this.log.error('Get Device Info failed');
+      this.retryInitialise();
     });
   }
 
@@ -79,54 +76,21 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.tpLinkAccessory.getSysInfo().device_on){
-      this.tpLinkAccessory.setBrightness(value as number).then((result) => {
-        if(result){
-          this.platform.log.debug('Set Characteristic Brightness ->', value);
-          this.tpLinkAccessory.getSysInfo().brightness = value as number;
-  
-          // you must call the callback function
-          callback(null);
-        } else{
-          callback(new Error('unreachable'), false);
-        }
-      }).catch((error) => {
-        this.log.error('Failed to set brightness: ' + error);
-        callback(new Error('unreachable'), false);
-      });
-    } else{
-      callback(null);
-    }
+  async setBrightness(value: CharacteristicValue):Promise<void> {
+    const brightness = value as number;
+    return this.setWhenOn('brightness', () => this.tpLinkAccessory.setBrightness(brightness).then((result) => {
+      if(result){
+        this.platform.log.debug('Set Characteristic Brightness ->', brightness);
+        this.tpLinkAccessory.getSysInfo().brightness = brightness;
+      }
+      return result;
+    }));
   }
 
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getBrightness(callback: CharacteristicGetCallback) {
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
-      if(response){
-        const brightness = response.brightness;
-
-        if(brightness !== undefined){
-          this.platform.log.debug('Get Characteristic Brightness ->', brightness);
-  
-          // you must call the callback function
-          // the first argument should be null if there were no errors
-          // the second argument should be the value to return
-          // you must call the callback function
-          callback(null, brightness);
-        } else{
-          callback(new Error('unreachable'), 0);
-        }
-      } else{
-        callback(new Error('unreachable'), 0);
-      }
-    }).catch(() => {
-      callback(new Error('unreachable'), 0);
-    });
+  async getBrightness():Promise<CharacteristicValue> {
+    const brightness = this.cached((sysInfo) => sysInfo.brightness);
+    this.platform.log.debug('Get Characteristic Brightness ->', brightness);
+    return brightness;
   }
 
   protected updateState(interval:number){
@@ -137,81 +101,37 @@ export class L520EAccessory extends TPLinkPlatformAccessory<L520E> {
 
         this.platform.log.debug('Get Characteristic On ->', isOn);
   
-        if(isOn !== undefined){
-          this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
-        } else{
-          this.setNoResponse();
-          interval += 300000;
-        }
-
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
         }
+
+        if(isOn !== undefined){
+          this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
+          this.scheduleNextUpdate(interval);
+          return;
+        }
       }
-      setTimeout(()=>{
-        this.updateState(interval + 300000);
-      }, interval);
+      this.setNoResponse();
+      this.scheduleNextUpdate(interval, true);
     }).catch(()=>{
       this.setNoResponse();
-      setTimeout(()=>{
-        this.updateState(interval + 300000);
-      }, interval);
+      this.scheduleNextUpdate(interval, true);
     });
-
-    setTimeout(()=>{
-      this.updateState(interval);
-    }, interval);
   }
 
   /**
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+  async setColorTemp(value: CharacteristicValue):Promise<void> {
     this.log.debug('Color Temp Homekit :' + value);
-    if(this.tpLinkAccessory.getSysInfo().device_on){
-      this.tpLinkAccessory.setColorTemp(value as number).then((result) => {
-        if(result){
-          this.tpLinkAccessory.getSysInfo().color_temp = value as number;
-          this.platform.log.debug('Set Characteristic Color Temperature ->', value);
-    
-          // you must call the callback function
-          callback(null);
-        } else{
-          callback(new Error('unreachable'), false);
-        }
-      }).catch((error) => {
-        this.log.error('Failed to set color temperature: ' + error);
-        callback(new Error('unreachable'), false);
-      });
-    } else{
-      // you must call the callback function
-      callback(null);
-    }
+    const mired = value as number;
+    // L520E.setColorTemp caches the resulting Kelvin value itself.
+    return this.setWhenOn('colorTemp', () => this.tpLinkAccessory.setColorTemp(mired));
   }
 
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getColorTemp(callback: CharacteristicGetCallback) {
-    this.tpLinkAccessory.getColorTemp().then((response) => {
-      if(response !== undefined){
-        const color_temp = response;
-
-        this.platform.log.debug('Get Characteristic Color Temperature ->', color_temp);
-  
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        callback(null, color_temp);
-      }else{
-        callback(new Error('unreachable'), 0);
-      }
-    }).catch(() => {
-      callback(new Error('unreachable'), 0);
-    });
+  async getColorTemp():Promise<CharacteristicValue> {
+    const colorTemp = this.cached((sysInfo) => sysInfo.color_temp);
+    return this.tpLinkAccessory.calculateColorTemp(colorTemp);
   }
 }

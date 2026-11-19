@@ -80,13 +80,13 @@
             "updateInterval": {
               "title": "Interval in which the state of the Accessory should be updated (in seconds)",
               "type": "number",
-              "default": "10",
+              "default": 10,
               "required": false
             },
             "timeout": {
               "title": "Request Timeout for the request sent to the Accessory (in seconds)",
               "type": "number",
-              "default": "2",
+              "default": 2,
               "required": false
             }
           }

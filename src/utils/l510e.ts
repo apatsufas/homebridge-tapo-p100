@@ -24,13 +24,7 @@ export default class L510E extends P100 {
   }
 
   async setBrightness(brightness:number):Promise<boolean>{
-    const payload = '{'+
-              '"method": "set_device_info",'+
-              '"params": {'+
-                  '"brightness": ' + brightness +
-                  '},'+
-                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                  '};';
+    const payload = this.buildPayload('set_device_info', { brightness });
 
     return this.sendRequest(payload);
   }

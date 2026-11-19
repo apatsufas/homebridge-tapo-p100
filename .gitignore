@@ -121,3 +121,6 @@ dist
 
 # Webstorm
 .idea
+# macOS / JetBrains
+.DS_Store
+*.iml

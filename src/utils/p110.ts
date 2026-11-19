@@ -19,45 +19,25 @@ export default class P110 extends P100 {
   }
 
   async getEnergyUsage():Promise<EnergyUsage>{        
-    const payload = '{'+
-        '"method": "get_energy_usage",'+
-        '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-        '};';
+    const payload = this.buildPayload('get_energy_usage');
      
-    if(this.is_klap){
-      return this.handleKlapRequest(payload).then((response)=>{
-        if(response && response.result){
-          this._consumption = {
-            current: Math.ceil(response.result.current_power / 1000),
-            total: response.result.today_energy / 1000,
-          };
-        } else{
-          this._consumption = {
-            current: 0,
-            total: 0,
-          };
-        }
-           
-        return response.result;
-      });
-    }else{
-      return this.handleRequest(payload).then((response)=>{
-        if(response && response.result){
-          this._consumption = {
-            current: Math.ceil(response.result.current_power / 1000),
-            total: response.result.today_energy / 1000,
-          };
-        } else{
-          this._consumption = {
-            current: 0,
-            total: 0,
-          };
-        }
-           
-        return response.result;
-      });
-    }
-    
+    const request = this.is_klap ? this.handleKlapRequest(payload) : this.handleRequest(payload);
+
+    return request.then((response)=>{
+      // handleRequest resolves `false` on device errors; never dereference it blindly.
+      const result = response ? response.result : undefined;
+      if(result){
+        this._consumption = {
+          // current_power is in mW; keep sub-watt precision (an idle device draws < 1 W)
+          current: result.current_power / 1000,
+          // today_energy is in Wh and resets at midnight; EnergyTotal turns it into a lifetime total
+          todayWh: result.today_energy,
+        };
+      }
+      // On a failed request keep the last reading rather than reporting a fake 0 W.
+
+      return result;
+    });
   }
 
   public getPowerConsumption():ConsumptionInfo{

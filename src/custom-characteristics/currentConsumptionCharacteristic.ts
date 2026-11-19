@@ -15,7 +15,8 @@ export default function currentConsumption(
         unit: 'Watt',
         maxValue: 65535,
         minValue: 0,
-        minStep: 1,
+        // sub-watt resolution: idle devices and LED bulbs draw well under 1 W
+        minStep: 0.1,
       });
     }
   };

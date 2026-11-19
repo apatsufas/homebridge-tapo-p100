@@ -1,8 +1,9 @@
-import { PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, 
+import { PlatformAccessory, CharacteristicValue, Logger, 
   AdaptiveLightingController } from 'homebridge';
 import type { TapoPlatform } from './platform.js';
 import L530 from './utils/l530.js';
 import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
+import { EnergyTotal } from './utils/energyTotal.js';
 
 /**
  * L530 Accessory
@@ -11,7 +12,10 @@ import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
  */
 export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   private adaptiveLightingController!: AdaptiveLightingController;
-  private readonly fakeGatoHistoryService?;
+  private readonly fakeGatoHistoryService;
+  private readonly energyTotal: EnergyTotal;
+  /** Hue/saturation set by HomeKit but not yet sent to the bulb. */
+  private pendingColor: { hue?: number; saturation?: number } = {};
 
   constructor(
     public readonly log: Logger,
@@ -28,8 +32,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
     this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,
       size:4096, 
-      storage:'fs',     
+      storage:'fs',
     });
+    this.energyTotal = new EnergyTotal(this.fakeGatoHistoryService, this.log);
 
     this.initialise(platform, updateInterval);
 
@@ -56,47 +61,38 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
       // each service must implement at-minimum the "required characteristics" for the given service type
       // see https://developers.homebridge.io/#/service/Outlet
 
-      // register handlers for the On/Off Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.On)
-        .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
-        .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+        .onSet(this.setOn.bind(this))
+        .onGet(this.getOn.bind(this));
 
-      // register handlers for the Brightness Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-        .on('set', this.setBrightness.bind(this))                // SET - bind to the `setBrightness` method below
-        .on('get', this.getBrightness.bind(this));               // GET - bind to the `getBrightness` method below
+        .onSet(this.setBrightness.bind(this))
+        .onGet(this.getBrightness.bind(this));
 
-      // register handlers for the ColorTemperature Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.ColorTemperature)
-        .on('set', this.setColorTemp.bind(this))                // SET - bind to the `setColorTemp` method below
-        .on('get', this.getColorTemp.bind(this))
+        .onSet(this.setColorTemp.bind(this))
+        .onGet(this.getColorTemp.bind(this))
         .setProps({
-          minValue: 140,
+          minValue: 154,
           maxValue: 400,
           minStep: 1,
-        });              // GET - bind to the `getColorTemp` method below
+        });
 
-      // register handlers for the Hue Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.Hue)
-        .on('set', this.setHue.bind(this))                // SET - bind to the `setHue` method below
-        .on('get', this.getHue.bind(this));               // GET - bind to the `getHue` method below
+        .onSet(this.setHue.bind(this))
+        .onGet(this.getHue.bind(this));
 
-      // register handlers for the Saturation Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.Saturation)
-        .on('set', this.setSaturation.bind(this))                // SET - bind to the `setSaturation` method below
-        .on('get', this.getSaturation.bind(this));               // GET - bind to the `getSaturation` method below
+        .onSet(this.setSaturation.bind(this))
+        .onGet(this.getSaturation.bind(this));
         
       this.service.addOptionalCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic);
       this.service.getCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic)
-        .on('get', this.getCurrentConsumption.bind(this));
+        .onGet(this.getCurrentConsumption.bind(this));
 
       this.service.addOptionalCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic);
       this.service.getCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic)
-        .on('get', this.getTotalConsumption.bind(this));
-
-      /*  this.service.addOptionalCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic);
-      this.service.getCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic)
-        .on('set', this.resetConsumption.bind(this));*/
+        .onGet(this.getTotalConsumption.bind(this));
 
       // Setup the adaptive lighting controller if available
       if (this.platform.api.versionGreaterOrEqual && this.platform.api.versionGreaterOrEqual('1.3.0-beta.23')) {
@@ -117,266 +113,112 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         this.updateState(interval);
       }, interval);
     }).catch(() => {
-      if(!this.tpLinkAccessory.is_klap){
-        this.setNoResponse();
-        this.log.error('100 - Get Device Info failed');
-      }
+      this.log.error('100 - Get Device Info failed');
+      this.retryInitialise();
     });
+  }
+
+  async setBrightness(value: CharacteristicValue):Promise<void> {
+    const brightness = value as number;
+    return this.setWhenOn('brightness', () => this.tpLinkAccessory.setBrightness(brightness).then((result) => {
+      if(result){
+        this.platform.log.debug('Set Characteristic Brightness ->', brightness);
+        this.tpLinkAccessory.getSysInfo().brightness = brightness;
+      }
+      return result;
+    }));
+  }
+
+  async getBrightness():Promise<CharacteristicValue> {
+    const brightness = this.cached((sysInfo) => sysInfo.brightness);
+    this.platform.log.debug('Get Characteristic Brightness ->', brightness);
+    return brightness;
   }
 
   /**
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.tpLinkAccessory.getSysInfo().device_on){
-      this.tpLinkAccessory.setBrightness(value as number).then((result) => {
-        if(result){
-          this.platform.log.debug('Set Characteristic Brightness ->', value);
-          this.tpLinkAccessory.getSysInfo().brightness = value as number;
-  
-          // you must call the callback function
-          callback(null);
-        } else{
-          callback(new Error('unreachable'), false);
-        }
-      }).catch((error) => {
-        this.log.error('Failed to set brightness: ' + error);
-        callback(new Error('unreachable'), false);
-      });
-    } else{
-      callback(null);
-    }
-  }
-
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getBrightness(callback: CharacteristicGetCallback) {
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
-      this.log.debug('getBritness: ' + JSON.stringify(response));
-      if(response){
-        const brightness = response.brightness;
-        if(brightness !== undefined){
-          this.platform.log.debug('Get Characteristic Brightness ->', brightness);
-  
-          // you must call the callback function
-          // the first argument should be null if there were no errors
-          // the second argument should be the value to return
-          // you must call the callback function
-          callback(null, brightness);
-        }else{
-          this.log.debug('getBritness: ' + 167);
-          callback(new Error('unreachable'), 0);
-        }
-      } else{
-        this.log.debug('getBritness: ' + 171);
-        callback(new Error('unreachable'), 0);
-      }
-    }).catch(() => {
-      this.log.debug('getBritness: ' + 175);
-      callback(new Error('unreachable'), 0);
-    });
-  }
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory.
-   */
-  setColorTemp(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+  async setColorTemp(value: CharacteristicValue):Promise<void> {
     this.log.debug('Color Temp Homekit :' + value);
-    if(this.tpLinkAccessory.getSysInfo().device_on){
-      this.tpLinkAccessory.setColorTemp(value as number).then((result) => {
-        if(result){
-          this.tpLinkAccessory.getSysInfo().color_temp = value as number;
-          this.platform.log.debug('Set Characteristic Color Temperature ->', value);
-    
-          // you must call the callback function
-          callback(null);
-        } else{
-          callback(new Error('unreachable'), false);
-        }
-      }).catch((error) => {
-        this.log.error('Failed to set color temperature: ' + error);
-        callback(new Error('unreachable'), false);
-      });
-    } else{
-      // you must call the callback function
-      callback(null);
-    }
+    const mired = value as number;
+    // colour temperature and hue/saturation are mutually exclusive modes on the bulb
+    this.pendingColor = {};
+    this.discardPendingChange('color');
+    // L520E.setColorTemp caches the resulting Kelvin value itself.
+    return this.setWhenOn('colorTemp', () => this.tpLinkAccessory.setColorTemp(mired));
   }
 
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getColorTemp(callback: CharacteristicGetCallback) {
-    this.tpLinkAccessory.getColorTemp().then((response) => {
-      this.log.debug('getColorTemp: ' + JSON.stringify(response));
-
-      if(response !== undefined){
-        const color_temp = response;
-
-        this.platform.log.debug('Get Characteristic Color Temperature ->', color_temp);
-  
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        callback(null, color_temp);
-      }else{
-        this.log.debug('getColorTemp: ' + 224);
-
-        callback(new Error('unreachable'), 0);
-      }
-    }).catch((error) => {
-      this.log.debug('getColorTemp: ' + 229);
-      this.log.debug('error: ' + error);
-
-      callback(new Error('unreachable'), 0);
-    });
+  async getColorTemp():Promise<CharacteristicValue> {
+    const colorTemp = this.cached((sysInfo) => sysInfo.color_temp);
+    return this.tpLinkAccessory.calculateColorTemp(colorTemp);
   }
 
   /**
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setHue(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.tpLinkAccessory.getSysInfo().device_on){
-      this.log.debug('Homekit Hue: ' + value);
-      this.tpLinkAccessory.setColor(Math.round(value as number), this.tpLinkAccessory.getSysInfo().saturation).then((result) => {
-        if(result){
-          this.tpLinkAccessory.getSysInfo().hue = Math.round(value as number);
-          this.platform.log.debug('Set Characteristic Hue ->', Math.round(value as number));
-          this.platform.log.debug('With Characteristic Saturation ->', this.tpLinkAccessory.getSysInfo().saturation);
-  
-          // you must call the callback function
-          callback(null);
-        } else{
-          callback(new Error('unreachable'), false);
-        }
-      }).catch((error) => {
-        this.log.error('Failed to set hue: ' + error);
-        callback(new Error('unreachable'), false);
-      });
-    } else{
-      callback(null);
-    }
+  async setHue(value: CharacteristicValue):Promise<void> {
+    this.log.debug('Homekit Hue: ' + value);
+    this.pendingColor.hue = Math.round(value as number);
+    this.discardPendingChange('colorTemp');
+    return this.setWhenOn('color', () => this.applyColor());
   }
 
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
-   */
-  getHue(callback: CharacteristicGetCallback) {
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
-      this.log.debug('getHue: ' + JSON.stringify(response));
-
-      if(response){
-        let hue = response.hue;
-        this.platform.log.debug('Get Characteristic Hue ->', hue);
-  
-        //Tapo only returns the hue value when a color has been set. So we need to hanle the cases when an color is not set
-        if(!hue){
-          hue = 0;
-        }
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        callback(null, hue);
-      } else{
-        this.log.debug('getHue: ' + 282);
-
-        callback(new Error('unreachable'), 0);
-      }
-    }).catch((error) => {
-      this.log.debug('Unreachable');
-      this.log.debug('getHue: ' + 288);
-      this.log.debug('error: ' + error);
-
-      callback(new Error('unreachable'), 0);
-    });
+  async getHue():Promise<CharacteristicValue> {
+    // Tapo only reports hue once a colour has been set
+    return this.cached((sysInfo) => sysInfo.hue ?? 0);
   }
 
   /**
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory.
    */
-  setSaturation(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    if(this.tpLinkAccessory.getSysInfo().device_on){
-      this.log.debug('Homekit Saturation: ' + value);
-      this.tpLinkAccessory.setColor(this.tpLinkAccessory.getSysInfo().hue, Math.round(value as number)).then((result) => {
-        if(result){
-          this.tpLinkAccessory.getSysInfo().saturation = Math.round(value as number);
-          this.platform.log.debug('Set Characteristic Saturation ->', Math.round(value as number));
-          this.platform.log.debug('With Characteristic Hue ->', this.tpLinkAccessory.getSysInfo().hue);
-  
-          // you must call the callback function
-          callback(null);
-        } else{
-          callback(new Error('unreachable'), false);
-        }
-      }).catch((error) => {
-        this.log.error('Failed to set saturation: ' + error);
-        callback(new Error('unreachable'), false);
-      });
-    } else{
-      callback(null);
-    }
+  async setSaturation(value: CharacteristicValue):Promise<void> {
+    this.log.debug('Homekit Saturation: ' + value);
+    this.pendingColor.saturation = Math.round(value as number);
+    this.discardPendingChange('colorTemp');
+    return this.setWhenOn('color', () => this.applyColor());
   }
 
   /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   * 
+   * Sends hue and saturation together. HomeKit sets them as two separate characteristics, so
+   * whichever was not changed is taken from the last known device state.
    */
-  getSaturation(callback: CharacteristicGetCallback) {
-    this.tpLinkAccessory.getDeviceInfo().then((response) => {
-      this.log.debug('getSaturation: ' + JSON.stringify(response));
-
-      if(response){
-        let saturation = response.saturation;
-
-        this.platform.log.debug('Get Characteristic Saturation ->', saturation);
-        //Tapo only returns the saturation value when a color has been set. So we need to hanle the cases when an color is not set
-        if(!saturation){
-          saturation = 0;
-        }
-        // you must call the callback function
-        // the first argument should be null if there were no errors
-        // the second argument should be the value to return
-        // you must call the callback function
-        callback(null, saturation);
-      } else{
-        this.log.debug('getSaturation: ' + 341);
-
-        callback(new Error('unreachable'), 0);
+  private applyColor():Promise<boolean>{
+    const sysInfo = this.tpLinkAccessory.getSysInfo();
+    const hue = this.pendingColor.hue ?? sysInfo.hue;
+    const saturation = this.pendingColor.saturation ?? sysInfo.saturation;
+    this.pendingColor = {};
+    return this.tpLinkAccessory.setColor(hue, saturation).then((result) => {
+      if(result){
+        this.platform.log.debug('Set Characteristic Hue/Saturation ->', hue, saturation);
+        this.tpLinkAccessory.getSysInfo().hue = hue;
+        this.tpLinkAccessory.getSysInfo().saturation = saturation;
       }
-    }).catch((error) => {
-      this.log.debug('getSaturation: ' + 346);
-      this.log.debug('error: ' + error);
-
-      callback(new Error('unreachable'), 0);
+      return result;
     });
   }
 
+  async getSaturation():Promise<CharacteristicValue> {
+    // Tapo only reports saturation once a colour has been set
+    return this.cached((sysInfo) => sysInfo.saturation ?? 0);
+  }
+
+  /**
+   * Fetches the bulb's usage totals (every 10 minutes): refreshes the power estimate and
+   * advances the lifetime Total Consumption.
+   */
   private updateConsumption(){
     this.log.debug('updateConsumption called');
     this.tpLinkAccessory.getEnergyUsage().then((response) => {
       this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
       if (response && response.power_usage) {
-        this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
-        if (this.fakeGatoHistoryService ) {
-          this.fakeGatoHistoryService.addEntry({
-            time: new Date().getTime() / 1000,
-            power: this.tpLinkAccessory.getPowerConsumption().current, 
-          });
+        const totalKWh = this.energyTotal.update(response.power_usage.today);
+        if (totalKWh !== undefined) {
+          this.service.updateCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic, totalKWh);
         }
+        this.recordPower();
       }
     }).catch((error) => {
       this.log.error('Failed to get energy usage: ' + error);
@@ -388,56 +230,31 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   }
 
   /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   *
+   * Pushes the current power estimate to HomeKit and the Eve history. Called on every state
+   * poll so switching the bulb on or off shows up within one poll, not only every 10 minutes;
+   * fakegato averages these into one history point per 10 minutes.
    */
-  getCurrentConsumption(callback: CharacteristicGetCallback) {
-    const consumption = this.tpLinkAccessory.getPowerConsumption();
-
-    // you must call the callback function
-    // the first argument should be null if there were no errors
-    // the second argument should be the value to return
-    // you must call the callback function
-    callback(null, consumption.current);
+  private recordPower(){
+    const watts = this.tpLinkAccessory.getPowerConsumption().current;
+    this.service.updateCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic, watts);
+    this.fakeGatoHistoryService.addEntry({
+      time: Math.round(Date.now() / 1000),
+      power: watts,
+    });
   }
 
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory.
-   *
-   */
-  getTotalConsumption(callback: CharacteristicGetCallback) {
-    const consumption = this.tpLinkAccessory.getPowerConsumption();
-
-    // you must call the callback function
-    // the first argument should be null if there were no errors
-    // the second argument should be the value to return
-    // you must call the callback function
-    callback(null, consumption.total);
+  async getCurrentConsumption():Promise<CharacteristicValue> {
+    return this.tpLinkAccessory.getPowerConsumption().current;
   }
 
-  /**
-   * Handle the "SET" requests from HomeKit
-   *
-   */
-  resetConsumption(value: CharacteristicValue, callback: CharacteristicGetCallback) {
-    const now = Math.round(new Date().valueOf() / 1000);
-    const epoch = Math.round(new Date('2001-01-01T00:00:00Z').valueOf() / 1000);
-
-    this.service.updateCharacteristic(this.platform.customCharacteristics.ResetConsumptionCharacteristic, now - epoch);
-
-    this.service.updateCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic, 0);
-    // you must call the callback function
-    // the first argument should be null if there were no errors
-    // the second argument should be the value to return
-    // you must call the callback function
-    callback(null);
+  async getTotalConsumption():Promise<CharacteristicValue> {
+    return this.energyTotal.totalKWh ?? 0;
   }
 
   protected updateState(interval:number){
     this.log.debug('updateState called');
     this.tpLinkAccessory.getDeviceInfo(true).then((response) => {
+      let failed = false;
       if(response){
         this.log.debug('Device Info: ' + JSON.stringify(response));
         const isOn = response.device_on;
@@ -452,7 +269,7 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
           this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
         } else{
           this.setNoResponse();
-          interval += 300000;
+          failed = true;
         }
 
         if(saturation){
@@ -468,18 +285,18 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
         }
+        if(!failed){
+          this.recordPower();
+        }
+      } else{
+        this.setNoResponse();
+        failed = true;
       }
 
-      setTimeout(()=>{
-        this.updateState(interval);
-      }, interval);
+      this.scheduleNextUpdate(interval, failed);
     }).catch(()=>{
       this.setNoResponse();
-      setTimeout(()=>{
-        this.updateState(interval + 300000);
-      }, interval);
+      this.scheduleNextUpdate(interval, true);
     });
-
-   
   }
 }
