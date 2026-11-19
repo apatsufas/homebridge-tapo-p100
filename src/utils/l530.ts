@@ -37,15 +37,11 @@ export default class L530 extends L520E {
       saturation = 0;
     }
     this.log.debug('Setting color: ' + hue + ', ' + saturation);
-    const payload = '{'+
-              '"method": "set_device_info",'+
-              '"params": {'+
-                  '"hue": ' + Math.round(hue) + ','+
-                  '"color_temp": 0,' +
-                  '"saturation": ' + Math.round(saturation) +
-                  '},'+
-                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                  '};';
+    const payload = this.buildPayload('set_device_info', {
+      hue: Math.round(hue),
+      color_temp: 0,
+      saturation: Math.round(saturation),
+    });
 
     return this.sendRequest(payload);
   }
@@ -60,68 +56,33 @@ export default class L530 extends L520E {
   }
 
   async getEnergyUsage():Promise<PowerUsage>{        
-    const payload = '{'+
-                '"method": "get_device_usage",'+
-                    '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                    '};';
+    const payload = this.buildPayload('get_device_usage');
     this.log.debug('getEnergyUsage called');
 
-    if(this.is_klap){
-      this.log.debug('getEnergyUsage is klap');
+    // Session-expiry retries happen inside handleKlapRequest (403) and handleRequest (9999),
+    // so errors that reach here are real failures and are passed on to the caller.
+    const request = this.is_klap ? this.handleKlapRequest(payload) : this.handleRequest(payload);
 
-      return this.handleKlapRequest(payload).then((response)=>{
-        this.log.debug('Consumption: ' + JSON.stringify(response));
-        if(response && response.result){
-          this._consumption = {
-            total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today) : 0,
-          };
-        } else{
-          this._consumption = {
-            total: 0,
-            current: 0,
-          };
-        }
-                        
-        return response.result;
-      }).catch((error)=>{
-        if(error.message && error.message.indexOf('9999') > 0){
-          return this.reconnect().then(()=>{
-            return this.handleKlapRequest(payload).then(()=>{
-              return true;
-            });
-          });
-        }
-        return false;
-      });
-    }else{
-      return this.handleRequest(payload).then((response)=>{
-        this.log.debug('Consumption: ' + response);
-        if(response && response.result){
-          this._consumption = {
-            total: response.result.power_usage.today / 1000,
-            current: this._consumption ? response.result.power_usage.today / this.toHours(response.result.time_usage.today)  : 0,
-          };
-        } else{
-          this._consumption = {
-            total: 0,
-            current: 0,
-          };
-        }
-                        
-        return response.result;
-      }).catch((error)=>{
-        if(error.message && error.message.indexOf('9999') > 0){
-          return this.reconnect().then(()=>{
-            return this.handleRequest(payload).then(()=>{
-              return true;
-            });
-          });
-        }
-        return false;
-      });
-    }
-    
+    return request.then((response)=>{
+      this.log.debug('Consumption: ' + JSON.stringify(response));
+      // handleRequest resolves `false` on device errors; never dereference it blindly.
+      const result = response ? response.result : undefined;
+      if(result && result.power_usage && result.time_usage){
+        const hoursOnToday = this.toHours(result.time_usage.today);
+        this._consumption = {
+          total: result.power_usage.today / 1000,
+          // Average power over today's on-time; 0 if the bulb has not been on yet today.
+          current: hoursOnToday > 0 ? result.power_usage.today / hoursOnToday : 0,
+        };
+      } else{
+        this._consumption = {
+          total: 0,
+          current: 0,
+        };
+      }
+
+      return result;
+    });
   }
 
   public getPowerConsumption():ConsumptionInfo{

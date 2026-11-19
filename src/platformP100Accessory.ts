@@ -1,4 +1,4 @@
-import { PlatformAccessory, CharacteristicGetCallback, Logger } from 'homebridge';
+import { PlatformAccessory, CharacteristicValue, Logger } from 'homebridge';
 import type { TapoPlatform } from './platform.js';
 import P100 from './utils/p100.js';
 import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
@@ -19,15 +19,15 @@ export class P100Accessory extends TPLinkPlatformAccessory<P100>{
   ) {
 
     super(log, platform, accessory, timeout, updateInterval);
-    
-    this.tpLinkAccessory = new P100(this.log, accessory.context.device.host, platform.config.username, platform.config.password, 
+
+    this.tpLinkAccessory = new P100(this.log, accessory.context.device.host, platform.config.username, platform.config.password,
       this.timeout);
 
     this.initialise(platform, updateInterval);
 
     // get the Outlet service if it exists, otherwise create a new Outlet service
     this.service = this.accessory.getService(this.platform.Service.Outlet) || this.accessory.addService(this.platform.Service.Outlet);
-    
+
     // set the service name, this is what is displayed as the default name on the Home app
     // we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
     this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
@@ -43,15 +43,12 @@ export class P100Accessory extends TPLinkPlatformAccessory<P100>{
 
       // each service must implement at-minimum the "required characteristics" for the given service type
       // see https://developers.homebridge.io/#/service/Outlet
-
-      // register handlers for the On/Off Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.On)
-        .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
-        .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
+        .onSet(this.setOn.bind(this))
+        .onGet(this.getOn.bind(this));
 
-      // register handlers for the OutletInUse Characteristic
       this.service.getCharacteristic(this.platform.Characteristic.OutletInUse)
-        .on('get', this.handleOutletInUseGet.bind(this));
+        .onGet(this.handleOutletInUseGet.bind(this));
 
       const interval = updateInterval ? updateInterval*1000 : 10000;
       this.log.debug('interval: ' + interval);
@@ -60,20 +57,18 @@ export class P100Accessory extends TPLinkPlatformAccessory<P100>{
         this.updateState(interval);
       }, interval);
     }).catch(() => {
-      this.setNoResponse();
       this.log.error('52 - Get Device Info failed');
+      this.retryInitialise();
     });
   }
 
   /**
    * Handle requests to get the current value of the "Outlet In Use" characteristic
    */
-  handleOutletInUseGet(callback: CharacteristicGetCallback) {
+  async handleOutletInUseGet():Promise<CharacteristicValue> {
     this.log.debug('Triggered GET OutletInUse');
 
     //P100 does not expose this info so we assume it is always in use
-    const currentValue = 1;
-
-    callback(null, currentValue);
+    return true;
   }
 }

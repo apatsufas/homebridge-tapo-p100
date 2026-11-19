@@ -3,19 +3,16 @@
 import { Logger } from 'homebridge';
 import { PlugSysinfo } from '../homekit-device/types.js';
 import TpLinkCipher from './tpLinkCipher.js';
-import { v4 as uuidv4 } from 'uuid';
 import { AxiosResponse } from 'axios';
 import NewTpLinkCipher from './newTpLinkCipher.js';
 import { TpLinkAccessory } from './tplinkAccessory.js';
 import axios from 'axios';
 import crypto from 'crypto';
-import utf8 from 'utf8';
 
 export default class P100 implements TpLinkAccessory{
 
   private _crypto = crypto;
   protected _axios = axios;
-  private _utf8 = utf8;
   public is_klap = true;
 
   private encodedPassword!: string;
@@ -29,6 +26,7 @@ export default class P100 implements TpLinkAccessory{
   protected terminalUUID: string;
   private _plugSysInfo!: PlugSysinfo;
   private _reconnect_counter: number;
+  private _klapReconnect?: Promise<void>;
   protected _timeout!: number;
 
   protected tpLinkCipher!: TpLinkCipher;
@@ -96,8 +94,7 @@ export default class P100 implements TpLinkAccessory{
     this.log.debug('Constructing P100 on host: ' + ipAddress);
     this.ip = ipAddress;
     this.encryptCredentials(email, password);
-    this.createKeyPair();
-    this.terminalUUID = uuidv4();
+    this.terminalUUID = crypto.randomUUID();
     this._reconnect_counter = 0;
     this._timeout = timeout;
   }
@@ -124,29 +121,54 @@ export default class P100 implements TpLinkAccessory{
     return digest;
   }
 
-  private createKeyPair() {
-    // Including publicKey and  privateKey from  
-    // generateKeyPairSync() method with its  
-    // parameters 
-    const { publicKey, privateKey } = this._crypto.generateKeyPairSync('rsa', {
-      publicKeyEncoding: {
-        type: 'spki',
-        format: 'pem',
-      },
-      privateKeyEncoding: {
-        type: 'pkcs1',
-        format: 'pem',
-      },
-      modulusLength: 1024,
+  /**
+   * RSA key pair for the legacy (securePassthrough) handshake. Generated asynchronously and only
+   * once, so constructing many devices doesn't block the event loop.
+   */
+  private async ensureKeyPair(): Promise<void> {
+    if (this.publicKey) {
+      return;
+    }
+    const { publicKey, privateKey } = await new Promise<{ publicKey: string; privateKey: string }>((resolve, reject) => {
+      this._crypto.generateKeyPair('rsa', {
+        publicKeyEncoding: {
+          type: 'spki',
+          format: 'pem',
+        },
+        privateKeyEncoding: {
+          type: 'pkcs1',
+          format: 'pem',
+        },
+        modulusLength: 1024,
+      }, (error, publicKey, privateKey) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve({ publicKey, privateKey });
+        }
+      });
     });
 
     this.privateKey = privateKey;
-    //@ts-ignore
-    this.publicKey = publicKey.toString('utf8');
+    this.publicKey = publicKey;
+  }
+
+  /**
+   * Serialises a device request. Key order (method, params, extra, requestTimeMils) matches what
+   * the device has always been sent.
+   */
+  protected buildPayload(method: string, params?: Record<string, unknown>, extra?: Record<string, unknown>): string {
+    return JSON.stringify({
+      method,
+      ...(params ? { params } : {}),
+      ...extra,
+      requestTimeMils: Math.round(Date.now() * 1000),
+    });
   }
 
   //old tapo requests
   async handshake(): Promise<void> {
+    await this.ensureKeyPair();
     const URL = 'http://' + this.ip + '/app';
     const payload = {
       'method': 'handshake',
@@ -192,14 +214,10 @@ export default class P100 implements TpLinkAccessory{
 
   async login(): Promise<void> {
     const URL = 'http://' + this.ip + '/app';
-    const payload = '{' +
-      '"method": "login_device",' +
-      '"params": {' +
-      '"username": "' + this.encodedEmail + '",' +
-      '"password": "' + this.encodedPassword + '"' +
-      '},' +
-      '"requestTimeMils": ' + Math.round(Date.now() * 1000) + '' +
-      '};';
+    const payload = this.buildPayload('login_device', {
+      username: this.encodedEmail,
+      password: this.encodedPassword,
+    });
 
     const headers = {
       'Cookie': this.cookie,
@@ -286,10 +304,9 @@ export default class P100 implements TpLinkAccessory{
         }
       })
       .catch((error: Error) => {
+        // 403 (session expired) is handled by the caller (handleKlapRequest), which re-authenticates
+        // once and retries. Re-authenticating here as well caused concurrent handshakes.
         this.log.error('276 Error: ' + error.message + ', on ip: ' + this.ip);
-        if(error.message && error.message.indexOf('403') > -1){
-          this.reAuthenticate();
-        }
         throw new Error('Request failed: ' + (error instanceof Error ? error.message : String(error)));
       });
   }
@@ -327,6 +344,8 @@ export default class P100 implements TpLinkAccessory{
       if (local_seed_auth_hash.toString('hex') === server_hash.toString('hex')) {
         this.log.debug('Handshake 1 successful');
         auth_hash = ah;
+      } else {
+        throw new Error('KLAP handshake failed: device rejected credentials (check Tapo email and password)');
       }
       const req = this._crypto.createHash('sha256').update(Buffer.concat([remote_seed, local_seed, auth_hash])).digest();
 
@@ -342,26 +361,12 @@ export default class P100 implements TpLinkAccessory{
   }
 
   async turnOff(): Promise<boolean> {
-    const payload = '{' +
-      '"method": "set_device_info",' +
-      '"params": {' +
-      '"device_on": false' +
-      '},' +
-      '"terminalUUID": "' + this.terminalUUID + '",' +
-      '"requestTimeMils": ' + Math.round(Date.now() * 1000) + '' +
-      '};';
+    const payload = this.buildPayload('set_device_info', { device_on: false }, { terminalUUID: this.terminalUUID });
     return this.sendRequest(payload);
   }
 
   async turnOn(): Promise<boolean> {
-    const payload = '{' +
-      '"method": "set_device_info",' +
-      '"params": {' +
-      '"device_on": true' +
-      '},' +
-      '"terminalUUID": "' + this.terminalUUID + '",' +
-      '"requestTimeMils": ' + Math.round(Date.now() * 1000) + '' +
-      '};';
+    const payload = this.buildPayload('set_device_info', { device_on: true }, { terminalUUID: this.terminalUUID });
 
     return this.sendRequest(payload);
   }
@@ -382,10 +387,7 @@ export default class P100 implements TpLinkAccessory{
     }
     const URL = 'http://' + this.ip + '/app?token=' + this.token;
 
-    const payload = '{' +
-      '"method": "get_device_info",' +
-      '"requestTimeMils": ' + Math.round(Date.now() * 1000) + '' +
-      '};';
+    const payload = this.buildPayload('get_device_info');
     const headers = {
       'Cookie': this.cookie,
     };
@@ -413,7 +415,7 @@ export default class P100 implements TpLinkAccessory{
               this.log.error(' Error Code: ' + res.data.error_code + ', ' + this.ERROR_CODES[res.data.error_code]);
               this.log.debug('Trying to reconnect...');
               return this.reconnect().then(() => {
-                return this.getDeviceInfo();
+                return this.getDeviceInfo(true);
               });
             }
             this._reconnect_counter = 0;
@@ -426,6 +428,7 @@ export default class P100 implements TpLinkAccessory{
             if (response.error_code !== 0) {
               return this.handleError(response.error_code, '333');
             }
+            this._reconnect_counter = 0;
             this.setSysInfo(response.result);
             this.log.debug('Device Info: ', response.result);
 
@@ -439,64 +442,22 @@ export default class P100 implements TpLinkAccessory{
           throw new Error('Get device info failed: ' + (error instanceof Error ? error.message : String(error)));
         });
     } else if (this.newTpLinkCipher) {
-      const data = this.newTpLinkCipher.encrypt(payload);
-
-      const URL = 'http://' + this.ip + '/app/' + 'request';
-      const headers = {
-        'Connection': 'Keep-Alive',
-        Host: this.ip,
-        Accept: '*/*',
-        'Content-Type': 'application/octet-stream',
-      };
-
-      if (this.cookie) {
-        //@ts-ignore
-        headers.Cookie = this.cookie;
-      }
-
-      const config = {
-        timeout: 5000,
-        responseType: 'arraybuffer',
-        headers: headers,
-        params: { seq: data.seq.toString() },
-      };
-      //@ts-ignore
-      return this._axios.post(URL, data.encryptedPayload, config)
-        .then((res: AxiosResponse) => {
-          if (res.data.error_code) {
-            return this.handleError(res.data.error_code, '309');
+      // handleKlapRequest re-authenticates once and retries on 403 (expired session).
+      return this.handleKlapRequest(payload)
+        .then((response) => {
+          if (Number(response.error_code) !== 0) {
+            this.handleError(response.error_code, '333');
+            throw new Error('device returned error_code ' + response.error_code);
           }
+          this.setSysInfo(response.result);
+          this.log.debug('Device Info: ', response.result);
 
-          try {
-            if (res.headers && res.headers['set-cookie']) {
-              this.cookie = res.headers['set-cookie'][0].split(';')[0];
-            }
-
-            const response = JSON.parse(this.newTpLinkCipher.decrypt(res.data));
-
-            if (response.error_code !== 0) {
-              return this.handleError(response.error_code, '333');
-            }
-            this.setSysInfo(response.result);
-            this.log.debug('Device Info: ', response.result);
-
-            return this.getSysInfo();
-          } catch (error) {
-            this.log.debug(this.newTpLinkCipher.decrypt(res.data));
-            this.log.debug('Status: ' + res.status);
-            return this.handleError(res.data.error_code, '480');
-          }
+          return this.getSysInfo();
         })
         .catch((error: Error) => {
-          this.log.debug('469 Error: ' + JSON.stringify(error) + ', on ip: ' + this.ip);
           this.log.error('469 Error: ' + error.message + ', on ip: ' + this.ip);
-          if(error.message && error.message.indexOf('403') > -1){
-            this.reAuthenticate();
-          }
           throw new Error('Get device info KLAP failed: ' + (error instanceof Error ? error.message : String(error)));
         });
-
-
     } else {
       return new Promise<PlugSysinfo>((resolve, reject) => {
         reject(new Error('Device not authenticated - handshake required'));
@@ -590,7 +551,13 @@ export default class P100 implements TpLinkAccessory{
       });
     } else {
       return this.handleKlapRequest(payload).then((result) => {
-        return result ? true : false;
+        // The device answers errors with a normal response carrying a non-zero error_code
+        // (possibly as a string, see NewTpLinkCipher.decrypt), so a truthy result is not success.
+        if (!result || Number(result.error_code) !== 0) {
+          this.handleError(result ? result.error_code : 'empty response', '596');
+          return false;
+        }
+        return true;
       }).catch((error) => {
         if (error.message && error.message.indexOf('9999') > 0 && this._reconnect_counter <= 3) {
           return this.newReconnect().then(() => {
@@ -631,12 +598,13 @@ export default class P100 implements TpLinkAccessory{
       return this._axios.post(URL, securePassthroughPayload, config)
         .then((res: AxiosResponse) => {
           if (res.data.error_code) {
-            if (res.data.error_code === '9999' || res.data.error_code === 9999 && this._reconnect_counter <= 3) {
+            if ((res.data.error_code === '9999' || res.data.error_code === 9999) && this._reconnect_counter <= 3) {
               //@ts-ignore
               this.log.error(' Error Code: ' + res.data.error_code + ', ' + this.ERROR_CODES[res.data.error_code]);
               this.log.debug('Trying to reconnect...');
+              // Re-send the original request after re-authenticating (not a cached device-info read).
               return this.reconnect().then(() => {
-                return this.getDeviceInfo();
+                return this.handleRequest(payload);
               });
             }
             this._reconnect_counter = 0;
@@ -650,6 +618,7 @@ export default class P100 implements TpLinkAccessory{
             if (response.error_code !== 0) {
               return this.handleError(response.error_code, '364');
             }
+            this._reconnect_counter = 0;
             return response;
           } catch (error) {
             return this.handleError(JSON.parse(decryptedResponse).error_code, '368');
@@ -659,9 +628,7 @@ export default class P100 implements TpLinkAccessory{
           return this.handleError(error.message, '656');
         });
     }
-    return new Promise<true>((resolve, reject) => {
-      reject();
-    });
+    return Promise.reject(new Error('Device not authenticated - handshake required'));
   }
 
   protected handleKlapRequest(payload: string): Promise<any> {
@@ -698,37 +665,21 @@ export default class P100 implements TpLinkAccessory{
 
   protected async reconnect(): Promise<void> {
     this._reconnect_counter++;
-    return this.handshake().then(() => {
-      this.login().then(() => {
-        return;
-      });
-    });
+    await this.handshake();
+    await this.login();
   }
 
-
+  /**
+   * Re-runs the KLAP handshake. Concurrent callers (e.g. a poll and a HomeKit set hitting
+   * 403 at the same time) share one in-flight handshake instead of racing on the cipher/cookie.
+   */
   protected async newReconnect(): Promise<void> {
     this._reconnect_counter++;
-    return this.handshake_new().then(() => {
-      return;
-    });
-  }
-
-  private reAuthenticate():void{
-    if(this.is_klap){
-      this.handshake_new().then(() => {
-        this.log.info('KLAP Authenticated successfully');
-      }).catch(() => {
-        this.log.error('KLAP Handshake failed');
-        this.is_klap = false;
-      });
-    } else {
-      this.handshake().then(() => {
-        this.login().then(() => {
-          this.log.info('Authenticated successfully');
-        }).catch(() => {
-          this.log.error('Login failed');
-        });
+    if (!this._klapReconnect) {
+      this._klapReconnect = this.handshake_new().finally(() => {
+        this._klapReconnect = undefined;
       });
     }
+    return this._klapReconnect;
   }
 }

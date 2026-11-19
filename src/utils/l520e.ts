@@ -30,17 +30,19 @@ export default class L520E extends L510E {
     const roundedValue = transformedColorTemp > 6500 ? 6500 : transformedColorTemp < 2500 ? 
       2500 : transformedColorTemp;
 
-    const payload = '{'+
-              '"method": "set_device_info",'+
-              '"params": {'+
-                  '"hue": 0,' +
-                  '"saturation": 0,' +
-                  '"color_temp": ' + roundedValue +
-                  '},'+
-                  '"requestTimeMils": ' + Math.round(Date.now() * 1000) + ''+
-                  '};';
+    const payload = this.buildPayload('set_device_info', {
+      hue: 0,
+      saturation: 0,
+      color_temp: roundedValue,
+    });
 
-    return this.sendRequest(payload);
+    return this.sendRequest(payload).then((result) => {
+      // Cache in the device's unit (Kelvin), never the HomeKit mired value we were given.
+      if (result && this.getSysInfo()) {
+        this.getSysInfo().color_temp = roundedValue;
+      }
+      return result;
+    });
   }
 
   private transformColorTemp(value: number):number{

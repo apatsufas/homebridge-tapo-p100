@@ -49,9 +49,9 @@ export class TapoPlatform implements DynamicPlatformPlugin {
     this.Service = api.hap.Service;
     this.Characteristic = api.hap.Characteristic;
 
-    this.log.debug('config.json: %j', config);
     this.config = parseConfig(config);
-    this.log.debug('config: %j', this.config);
+    // Never log the password: users routinely paste -D logs into public issues.
+    this.log.debug('config: %j', { ...this.config, password: this.config.password ? '***' : '' });
     this.log.debug('Finished initializing platform:', this.config.name);
     this.customCharacteristics = Characteristics(api.hap.Characteristic);
     this.FakeGatoHistoryService = fakegato(this.api);
@@ -115,7 +115,7 @@ export class TapoPlatform implements DynamicPlatformPlugin {
             // this is imported from `platformAccessory.ts`
             if(device.type && device.type.toLowerCase() === 'colorlight'){
               new L530Accessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
-            } else if(device.type && device.type.toLowerCase() === 'whiteLight'){
+            } else if(device.type && device.type.toLowerCase() === 'whitelight'){
               new L520EAccessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
             } else if(device.type && device.type.toLowerCase() === 'light'){
               new L510EAccessory(this.log, this, existingAccessory, device.timeout ? device.timeout : 2, device.updateInterval);
@@ -127,11 +127,6 @@ export class TapoPlatform implements DynamicPlatformPlugin {
       
             // update accessory cache with any changes to the accessory details and information
             this.api.updatePlatformAccessories([existingAccessory]);
-          } else if (!device) {
-            // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
-            // remove platform accessories when no longer present
-            this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-            this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
           }
         } else {
           // the accessory does not yet exist, so we need to create it
@@ -155,7 +150,7 @@ export class TapoPlatform implements DynamicPlatformPlugin {
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.device = device;
             new L510EAccessory(this.log, this, accessory, device.timeout ? device.timeout : 2, device.updateInterval);
-          } else if(device.type && device.type.toLowerCase() === 'whiteLight'){
+          } else if(device.type && device.type.toLowerCase() === 'whitelight'){
             // create a new accessory
             accessory = new this.api.platformAccessory(device.name ? device.name : device.host, uuid, Categories.LIGHTBULB);
             // store a copy of the device object in the `accessory.context`
@@ -182,6 +177,24 @@ export class TapoPlatform implements DynamicPlatformPlugin {
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
         }
       }
+    }
+
+    this.removeStaleAccessories(devices ?? []);
+  }
+
+  /**
+   * Unregisters cached accessories that no longer match a configured device, i.e. devices that
+   * were removed from the config or whose host/name changed (the UUID is derived from both).
+   */
+  private removeStaleAccessories(devices: Array<{ host: string; name?: string }>) {
+    const configured = new Set(devices.map(device => this.api.hap.uuid.generate(device.host + (device.name ? device.name : ''))));
+    const stale = this.accessories.filter(accessory => !configured.has(accessory.UUID));
+
+    if (stale.length > 0) {
+      for (const accessory of stale) {
+        this.log.info('Removing accessory no longer in config:', accessory.displayName);
+      }
+      this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, stale);
     }
   }
 }
