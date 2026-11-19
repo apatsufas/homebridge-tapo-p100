@@ -18,7 +18,6 @@ export default class L530 extends L520E {
     super(log, ipAddress, email, password, timeout);
     this.log.debug('Constructing L530 on host: ' + ipAddress);
     this._consumption = {
-      total: 0,
       current: 0,
     };
   }
@@ -68,34 +67,42 @@ export default class L530 extends L520E {
       // handleRequest resolves `false` on device errors; never dereference it blindly.
       const result = response ? response.result : undefined;
       if(result && result.power_usage && result.time_usage){
-        const hoursOnToday = this.toHours(result.time_usage.today);
         this._consumption = {
-          total: result.power_usage.today / 1000,
-          // Average power over today's on-time; 0 if the bulb has not been on yet today.
-          current: hoursOnToday > 0 ? result.power_usage.today / hoursOnToday : 0,
-        };
-      } else{
-        this._consumption = {
-          total: 0,
-          current: 0,
+          current: this.estimateWatts(result),
+          todayWh: result.power_usage.today,
         };
       }
+      // On a failed request keep the last estimate rather than reporting a fake 0 W.
 
       return result;
     });
   }
 
+  /**
+   * Power while the bulb is on, in W. The L530 has no power meter and only reports energy (Wh) and
+   * on-time (minutes) totals, so this is an average: past 7 days if available, else past 30 days,
+   * else today. Today alone is unreliable: the bulb reports whole Wh, so after a few minutes of
+   * on-time it can read 0 Wh and give 0 W for a bulb that is on.
+   */
+  private estimateWatts(usage: PowerUsage):number{
+    for(const period of ['past7', 'past30', 'today'] as const){
+      const hours = usage.time_usage[period] / 60;
+      const wh = usage.power_usage[period];
+      if(hours > 0 && Number.isFinite(wh)){
+        return wh / hours;
+      }
+    }
+    return 0;
+  }
+
   public getPowerConsumption():ConsumptionInfo{
-    if(!this.getSysInfo().device_on){
+    const sysInfo = this.getSysInfo();
+    if(!sysInfo || !sysInfo.device_on){
       return {
-        total: this._consumption.total,
         current: 0,
+        todayWh: this._consumption.todayWh,
       };
     }
     return this._consumption;
-  }
-
-  private toHours(minutes: number):number{
-    return minutes/60;
   }
 }

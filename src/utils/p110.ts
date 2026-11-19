@@ -28,15 +28,13 @@ export default class P110 extends P100 {
       const result = response ? response.result : undefined;
       if(result){
         this._consumption = {
-          current: Math.ceil(result.current_power / 1000),
-          total: result.today_energy / 1000,
-        };
-      } else{
-        this._consumption = {
-          current: 0,
-          total: 0,
+          // current_power is in mW; keep sub-watt precision (an idle device draws < 1 W)
+          current: result.current_power / 1000,
+          // today_energy is in Wh and resets at midnight; EnergyTotal turns it into a lifetime total
+          todayWh: result.today_energy,
         };
       }
+      // On a failed request keep the last reading rather than reporting a fake 0 W.
 
       return result;
     });

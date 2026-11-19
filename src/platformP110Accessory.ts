@@ -2,6 +2,7 @@ import { PlatformAccessory, CharacteristicValue, Logger } from 'homebridge';
 import type { TapoPlatform } from './platform.js';
 import P110 from './utils/p110.js';
 import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
+import { EnergyTotal } from './utils/energyTotal.js';
 
 /**
  * P110 Accessory
@@ -9,7 +10,8 @@ import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
  * Each accessory may expose multiple services of different service types.
  */
 export class P110Accessory extends TPLinkPlatformAccessory<P110>{
-  private readonly fakeGatoHistoryService?;
+  private readonly fakeGatoHistoryService;
+  private readonly energyTotal: EnergyTotal;
 
   constructor(
     public readonly log: Logger,
@@ -28,6 +30,7 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
       size:4096,
       storage:'fs',
     });
+    this.energyTotal = new EnergyTotal(this.fakeGatoHistoryService, this.log);
 
     this.initialise(platform, updateInterval);
 
@@ -77,13 +80,20 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
     this.log.debug('updateConsumption called');
     this.tpLinkAccessory.getEnergyUsage().then((response) => {
       this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
-      if (this.fakeGatoHistoryService && response && typeof response.current_power === 'number') {
-        this.platform.log.debug('Get Characteristic Power consumption ->', response.current_power);
-        this.service.updateCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic, response.current_power/1000);
-        this.fakeGatoHistoryService.addEntry({
-          time: new Date().getTime() / 1000,
-          power: this.tpLinkAccessory.getPowerConsumption().current,
-        });
+      if (!response || typeof response.current_power !== 'number') {
+        return;
+      }
+      const watts = response.current_power / 1000;
+      this.service.updateCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic, watts);
+      // fakegato averages everything added here into one Eve history point per 10 minutes
+      this.fakeGatoHistoryService.addEntry({
+        time: Math.round(Date.now() / 1000),
+        power: watts,
+      });
+
+      const totalKWh = this.energyTotal.update(response.today_energy);
+      if (totalKWh !== undefined) {
+        this.service.updateCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic, totalKWh);
       }
     }).catch((error) => {
       this.log.debug('Failed to get energy usage: ' + error);
@@ -96,8 +106,7 @@ export class P110Accessory extends TPLinkPlatformAccessory<P110>{
   }
 
   async getTotalConsumption():Promise<CharacteristicValue> {
-    const consumption = this.tpLinkAccessory.getPowerConsumption();
-    return consumption && consumption.total !== undefined ? consumption.total : 0;
+    return this.energyTotal.totalKWh ?? 0;
   }
 
   protected updateState(interval:number){

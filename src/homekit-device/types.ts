@@ -29,6 +29,8 @@ export type ColorLightSysinfo = ColorTempLightSysinfo &{
   };
 
 export type ConsumptionInfo = {
-    total?: number;
+    /** Power in W (measured on plugs, estimated on bulbs). */
     current: number;
+    /** Energy used since local midnight in Wh, as reported by the device. */
+    todayWh?: number;
 };

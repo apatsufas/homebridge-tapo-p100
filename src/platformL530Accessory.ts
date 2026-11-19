@@ -3,6 +3,7 @@ import { PlatformAccessory, CharacteristicValue, Logger,
 import type { TapoPlatform } from './platform.js';
 import L530 from './utils/l530.js';
 import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
+import { EnergyTotal } from './utils/energyTotal.js';
 
 /**
  * L530 Accessory
@@ -11,7 +12,8 @@ import { TPLinkPlatformAccessory } from './platformTPLinkAccessory.js';
  */
 export class L530Accessory extends TPLinkPlatformAccessory<L530> {
   private adaptiveLightingController!: AdaptiveLightingController;
-  private readonly fakeGatoHistoryService?;
+  private readonly fakeGatoHistoryService;
+  private readonly energyTotal: EnergyTotal;
   /** Hue/saturation set by HomeKit but not yet sent to the bulb. */
   private pendingColor: { hue?: number; saturation?: number } = {};
 
@@ -30,8 +32,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
     this.fakeGatoHistoryService = new this.platform.FakeGatoHistoryService('energy', accessory, {
       log: this.log,
       size:4096, 
-      storage:'fs',     
+      storage:'fs',
     });
+    this.energyTotal = new EnergyTotal(this.fakeGatoHistoryService, this.log);
 
     this.initialise(platform, updateInterval);
 
@@ -202,18 +205,20 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
     return this.cached((sysInfo) => sysInfo.saturation ?? 0);
   }
 
+  /**
+   * Fetches the bulb's usage totals (every 10 minutes): refreshes the power estimate and
+   * advances the lifetime Total Consumption.
+   */
   private updateConsumption(){
     this.log.debug('updateConsumption called');
     this.tpLinkAccessory.getEnergyUsage().then((response) => {
       this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
       if (response && response.power_usage) {
-        this.log.debug('Get Characteristic Power consumption ->', JSON.stringify(response));
-        if (this.fakeGatoHistoryService ) {
-          this.fakeGatoHistoryService.addEntry({
-            time: new Date().getTime() / 1000,
-            power: this.tpLinkAccessory.getPowerConsumption().current, 
-          });
+        const totalKWh = this.energyTotal.update(response.power_usage.today);
+        if (totalKWh !== undefined) {
+          this.service.updateCharacteristic(this.platform.customCharacteristics.TotalConsumptionCharacteristic, totalKWh);
         }
+        this.recordPower();
       }
     }).catch((error) => {
       this.log.error('Failed to get energy usage: ' + error);
@@ -224,12 +229,26 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
     }, 600000);
   }
 
+  /**
+   * Pushes the current power estimate to HomeKit and the Eve history. Called on every state
+   * poll so switching the bulb on or off shows up within one poll, not only every 10 minutes;
+   * fakegato averages these into one history point per 10 minutes.
+   */
+  private recordPower(){
+    const watts = this.tpLinkAccessory.getPowerConsumption().current;
+    this.service.updateCharacteristic(this.platform.customCharacteristics.CurrentConsumptionCharacteristic, watts);
+    this.fakeGatoHistoryService.addEntry({
+      time: Math.round(Date.now() / 1000),
+      power: watts,
+    });
+  }
+
   async getCurrentConsumption():Promise<CharacteristicValue> {
     return this.tpLinkAccessory.getPowerConsumption().current;
   }
 
   async getTotalConsumption():Promise<CharacteristicValue> {
-    return this.tpLinkAccessory.getPowerConsumption().total ?? 0;
+    return this.energyTotal.totalKWh ?? 0;
   }
 
   protected updateState(interval:number){
@@ -265,6 +284,9 @@ export class L530Accessory extends TPLinkPlatformAccessory<L530> {
         }
         if(brightness){
           this.service.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
+        }
+        if(!failed){
+          this.recordPower();
         }
       } else{
         this.setNoResponse();
